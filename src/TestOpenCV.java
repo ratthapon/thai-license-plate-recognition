@@ -8,7 +8,5 @@ public class TestOpenCV {
 		System.out.println(String.format("Writing %s", filename));
 		Mat img = Highgui.imread("lena.png");
 		Highgui.imwrite(filename, img);
-		// test open
-		String filename2 = "test.png";
 	}
 }
