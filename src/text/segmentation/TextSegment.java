@@ -1,6 +1,8 @@
 package text.segmentation;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Vector;
 
@@ -24,10 +26,6 @@ class TextSegment {
 		Highgui.imwrite("adaptived.jpg", plateImg);
 
 		// apply some dilation and erosion to join the gaps
-		/*
-		 * >> fasf = f; >> for k = 2:5 se = strel('disk', k); fasf =
-		 * imclose(imopen(fasf, se), se); end >> figure imshow(fasf); >> figure
-		 */
 		for (int i = 5; i <= 14; i++) {
 			Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT,
 					new Size(i, i));
@@ -38,15 +36,17 @@ class TextSegment {
 
 		// Find the contours
 		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-		List<MatOfPoint> boundingRect = new ArrayList<MatOfPoint>();
+		List<MatOfPoint> boundingRectPoint = new ArrayList<MatOfPoint>();
+		List<Rect> boundingRect = new ArrayList<Rect>();
 		Mat hierarchy = new Mat();
 
 		Imgproc.findContours(plateImg, contours, hierarchy, Imgproc.RETR_LIST,
 				Imgproc.CHAIN_APPROX_SIMPLE);
-
+		Imgproc.cvtColor(plateImg, plateImg, Imgproc.COLOR_GRAY2RGB);
 		System.out.println("size of " + contours.size());
 		// Imgproc.drawContours(plateImg, contours, -1, new Scalar(255, 255,
 		// 255));
+
 		for (MatOfPoint matOfPoint : contours) {
 			Rect tempRect = Imgproc.boundingRect(matOfPoint);
 			MatOfPoint tmp = new MatOfPoint(new Point(tempRect.x, tempRect.y),
@@ -54,13 +54,29 @@ class TextSegment {
 					new Point(tempRect.x + tempRect.width, tempRect.y
 							+ tempRect.height), new Point(tempRect.x,
 							tempRect.y + tempRect.height));
-			boundingRect.add(tmp);
+			boundingRectPoint.add(tmp);
+			boundingRect.add(tempRect);
 
 		}
-		Imgproc.drawContours(plateImg, boundingRect, -1, new Scalar(255, 255, 255));
+		Collections.sort(boundingRect, comparator);
+		int i = 0;
+		for (Rect rect : boundingRect) {
+			Mat cropImg = (new Mat(image, rect)).clone();
+			System.out.println("sorted x = "+rect.x);
+			Highgui.imwrite("cropchar/img_" + (i++) + ".jpg", cropImg);
+		}
+		Imgproc.drawContours(plateImg, boundingRectPoint, -1, new Scalar(0,
+				255, 0));
 		Highgui.imwrite("contour.jpg", plateImg);
 		return plateImg.clone();
 	}
+	
+	// for sort character in plate
+	static Comparator<Rect> comparator = new Comparator<Rect>() {
+		public int compare(Rect c1, Rect c2) {
+			return c1.x - c2.x ;
+		}
+	};
 
 	public static void main(String[] args) {
 		System.loadLibrary("opencv_java248");
