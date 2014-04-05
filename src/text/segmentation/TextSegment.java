@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Vector;
 
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
@@ -20,6 +19,7 @@ class TextSegment {
 		Mat plateImg = image.clone();
 		System.out.println("Segmenting Text");
 		Imgproc.cvtColor(plateImg, plateImg, Imgproc.COLOR_RGBA2GRAY);
+		Highgui.imwrite("cvt.jpg", plateImg);
 		Imgproc.adaptiveThreshold(plateImg, plateImg, 255,
 				Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, 1, 11, 5);
 		// Imgproc.cvtColor(plateImg, plateImg, Imgproc.COLOR_BGR2GRAY);
@@ -29,8 +29,9 @@ class TextSegment {
 		for (int i = 5; i <= 14; i++) {
 			Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT,
 					new Size(i, i));
-			Imgproc.dilate(plateImg, plateImg, kernel);
 			Imgproc.erode(plateImg, plateImg, kernel);
+			Imgproc.dilate(plateImg, plateImg, kernel);
+			
 		}
 		Highgui.imwrite("open and close.jpg", plateImg);
 
@@ -42,7 +43,7 @@ class TextSegment {
 
 		Imgproc.findContours(plateImg, contours, hierarchy, Imgproc.RETR_LIST,
 				Imgproc.CHAIN_APPROX_SIMPLE);
-		Imgproc.cvtColor(plateImg, plateImg, Imgproc.COLOR_GRAY2RGB);
+		Imgproc.cvtColor(plateImg, plateImg, Imgproc.COLOR_GRAY2RGBA);
 		System.out.println("size of " + contours.size());
 		// Imgproc.drawContours(plateImg, contours, -1, new Scalar(255, 255,
 		// 255));
@@ -65,9 +66,11 @@ class TextSegment {
 			System.out.println("sorted x = "+rect.x);
 			Highgui.imwrite("cropchar/img_" + (i++) + ".jpg", cropImg);
 		}
-		Imgproc.drawContours(plateImg, boundingRectPoint, -1, new Scalar(0,
-				255, 0));
-		Highgui.imwrite("contour.jpg", plateImg);
+		Imgproc.drawContours(image, boundingRectPoint, -1, new Scalar(0,
+				255, 0),1);
+		Imgproc.drawContours(image, contours, -1, new Scalar(0,
+				0, 255),1);
+		Highgui.imwrite("drawBound.jpg", image);
 		return plateImg.clone();
 	}
 	
