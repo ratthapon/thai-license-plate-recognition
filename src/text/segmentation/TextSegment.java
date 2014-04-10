@@ -14,25 +14,26 @@ import org.opencv.core.Size;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
-class TextSegment {
+class TextSegment extends Imgproc {
+	private static final int structureElementSize = 5;
+
 	public static Mat preprocessPlate(Mat image) {
 		Mat plateImg = image.clone();
 		System.out.println("Segmenting Text");
-		Imgproc.cvtColor(plateImg, plateImg, Imgproc.COLOR_RGBA2GRAY);
+		cvtColor(plateImg, plateImg, COLOR_RGB2GRAY);
 		Highgui.imwrite("cvt.jpg", plateImg);
-		Imgproc.adaptiveThreshold(plateImg, plateImg, 255,
-				Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, 1, 11, 5);
-		// Imgproc.cvtColor(plateImg, plateImg, Imgproc.COLOR_BGR2GRAY);
-		Highgui.imwrite("adaptived.jpg", plateImg);
+		// adaptiveThreshold(plateImg, plateImg, 255,
+		// ADAPTIVE_THRESH_GAUSSIAN_C, 1, 11, 5);
+		// cvtColor(plateImg, plateImg, COLOR_BGR2GRAY);
+		// Highgui.imwrite("adaptived.jpg", plateImg);
+		threshold(plateImg, plateImg, 192, 255, THRESH_BINARY);
+		Highgui.imwrite("thresh.jpg", plateImg);
 
 		// apply some dilation and erosion to join the gaps
-		for (int i = 5; i <= 14; i++) {
-			Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT,
-					new Size(i, i));
-			Imgproc.erode(plateImg, plateImg, kernel);
-			Imgproc.dilate(plateImg, plateImg, kernel);
-			
-		}
+		Mat structureElement = getStructuringElement(MORPH_RECT, new Size(
+				structureElementSize, structureElementSize));
+		dilate(plateImg, plateImg, structureElement);
+		erode(plateImg, plateImg, structureElement);
 		Highgui.imwrite("open and close.jpg", plateImg);
 
 		// Find the contours
@@ -41,43 +42,46 @@ class TextSegment {
 		List<Rect> boundingRect = new ArrayList<Rect>();
 		Mat hierarchy = new Mat();
 
-		Imgproc.findContours(plateImg, contours, hierarchy, Imgproc.RETR_LIST,
-				Imgproc.CHAIN_APPROX_SIMPLE);
-		Imgproc.cvtColor(plateImg, plateImg, Imgproc.COLOR_GRAY2RGBA);
+		findContours(plateImg, contours, hierarchy, RETR_LIST,
+				CHAIN_APPROX_NONE);
+		cvtColor(plateImg, plateImg, COLOR_GRAY2RGBA);
 		System.out.println("size of " + contours.size());
-		// Imgproc.drawContours(plateImg, contours, -1, new Scalar(255, 255,
+		// drawContours(plateImg, contours, -1, new Scalar(255, 255,
 		// 255));
-
+		float calibrate = structureElementSize / 2;
+		int charSizeThresh = 90; // px 2/3 of plat hieght
 		for (MatOfPoint matOfPoint : contours) {
-			Rect tempRect = Imgproc.boundingRect(matOfPoint);
-			MatOfPoint tmp = new MatOfPoint(new Point(tempRect.x, tempRect.y),
-					new Point(tempRect.x + tempRect.width, tempRect.y),
-					new Point(tempRect.x + tempRect.width, tempRect.y
-							+ tempRect.height), new Point(tempRect.x,
-							tempRect.y + tempRect.height));
-			boundingRectPoint.add(tmp);
-			boundingRect.add(tempRect);
-
+			Rect tempRect = boundingRect(matOfPoint);
+			MatOfPoint tmp = new MatOfPoint(new Point(tempRect.x - calibrate,
+					tempRect.y - calibrate), new Point(tempRect.x
+					+ tempRect.width - calibrate, tempRect.y - calibrate),
+					new Point(tempRect.x + tempRect.width - calibrate,
+							tempRect.y + tempRect.height - calibrate),
+					new Point(tempRect.x - calibrate, tempRect.y
+							+ tempRect.height - calibrate));
+			if (tempRect.height > charSizeThresh
+					&& tempRect.height < charSizeThresh * 2) {
+				boundingRectPoint.add(tmp);
+				boundingRect.add(tempRect);
+			}
 		}
 		Collections.sort(boundingRect, comparator);
 		int i = 0;
 		for (Rect rect : boundingRect) {
 			Mat cropImg = (new Mat(image, rect)).clone();
-			System.out.println("sorted x = "+rect.x);
+			System.out.println("sorted x = " + rect.x);
 			Highgui.imwrite("cropchar/img_" + (i++) + ".jpg", cropImg);
 		}
-		Imgproc.drawContours(image, boundingRectPoint, -1, new Scalar(0,
-				255, 0),1);
-		Imgproc.drawContours(image, contours, -1, new Scalar(0,
-				0, 255),1);
+		drawContours(image, boundingRectPoint, -1, new Scalar(0, 255, 0), 1);
+		drawContours(image, contours, -1, new Scalar(0, 0, 255), 1);
 		Highgui.imwrite("drawBound.jpg", image);
 		return plateImg.clone();
 	}
-	
+
 	// for sort character in plate
 	static Comparator<Rect> comparator = new Comparator<Rect>() {
 		public int compare(Rect c1, Rect c2) {
-			return c1.x - c2.x ;
+			return c1.x - c2.x;
 		}
 	};
 
@@ -85,7 +89,8 @@ class TextSegment {
 		System.loadLibrary("opencv_java248");
 		Mat img;
 		Mat plateImg;
-		img = Highgui.imread("LP2.jpg");
+		img = Highgui.imread("detectplate.jpg");
+		resize(img, img, new Size(600, 270));
 		plateImg = preprocessPlate(img);
 		Highgui.imwrite("preprocessed.jpg", plateImg);
 	}
