@@ -9,7 +9,6 @@ import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
-import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
@@ -60,23 +59,10 @@ class TextSegment extends Imgproc {
 		Collections.sort(boundingRect, comparator);
 		for (Rect rect : boundingRect) {
 			Mat cropImg = (new Mat(image, rect)).clone();
-			/*
-			 //fill contour
-			cvtColor(cropImg, cropImg, COLOR_RGBA2GRAY);
-			List<MatOfPoint> charContours = new ArrayList<MatOfPoint>();
-			Mat charContoursHierarchy = new Mat();
-			findContours(cropImg, charContours, charContoursHierarchy, RETR_LIST,
-					CHAIN_APPROX_NONE);
-			drawContours(cropImg, charContours, -1, new Scalar(0, 0, 0), -1);
-			*/
+			threshold(plateImg, plateImg, 127, 255, THRESH_BINARY);
 			resize(cropImg, cropImg, new Size(32, 32));
 			charList.add(cropImg);
 		}
-		/*
-		 * drawContours(image, boundingRectPoint, -1, new Scalar(0, 255, 0), 1);
-		 * drawContours(image, contours, -1, new Scalar(0, 0, 255), 1);
-		 * Highgui.imwrite("drawBound.jpg", image);
-		 */
 		return charList;
 	}
 
@@ -96,7 +82,7 @@ class TextSegment extends Imgproc {
 		charList = segmentText(img);
 		int i = 1;
 		for (Mat mat : charList) {
-			Highgui.imwrite("segment/char_at_" + (i++)+".jpg", mat);
+			Highgui.imwrite("segment/char_at_" + (i++) + ".jpg", mat);
 		}
 	}
 }
