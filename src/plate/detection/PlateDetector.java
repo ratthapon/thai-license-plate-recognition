@@ -13,7 +13,7 @@ import org.opencv.core.Size;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
-public class PlateDetect extends Imgproc {
+public class PlateDetector extends Imgproc {
 	private static int strelSize = 80; // px
 	private static int threshLevel = 256; // 8bit
 	private static double detectRatio = 0.95; // 95% of rectangke
@@ -112,7 +112,7 @@ public class PlateDetect extends Imgproc {
 		Mat actual;
 
 		expected = Highgui.imread("expected.jpg");
-		actual = PlateDetect.detectPlate("sourcedata/CAR1.jpg");
+		actual = PlateDetector.detectPlate("sourcedata/CAR1.jpg");
 		Mat dif = new Mat();
 		// Highgui.imwrite("expected.jpg",actual);
 		Highgui.imwrite("log/actual.jpg", actual);

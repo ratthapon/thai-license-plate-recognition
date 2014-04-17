@@ -6,24 +6,29 @@ import java.util.List;
 import ocr.text.recognition.OCR;
 
 import org.opencv.core.Mat;
+import org.opencv.highgui.Highgui;
 
-import plate.detection.Detector;
+import plate.detection.PlateNumberDetector;
 
 public class Core {
-	public static String readPlate(Mat carImage) {
+	public boolean open(){
+		return false;
+	};
+	private static String readPlate() {
 		// TODO
 		System.loadLibrary("opencv_java248");
 		String plateNumber = "";
-		plateNumber = dummyReadPlate(carImage);
+		plateNumber = dummyReadPlate();
 		return plateNumber;
 	}
 	
-	static String dummyReadPlate(Mat carImage) {
+	private static String dummyReadPlate() {
 		System.loadLibrary("opencv_java248");
+		Mat carImage = new Mat();
 		String plateNumber = "";
 		List<Mat> charImageList = new ArrayList<>();
-		Mat dummyPlateImage = new Mat();
-		charImageList = Detector.getCharImageList(dummyPlateImage);
+		Mat dummyPlateImage = Highgui.imread("sourcedata/LP5.jpg");
+		charImageList = PlateNumberDetector.getCharImageList(dummyPlateImage);
 		for (Mat charImage : charImageList) {
 			plateNumber = plateNumber + OCR.recognizeCharImage(charImage);
 		}
@@ -32,6 +37,6 @@ public class Core {
 	
 	public static void main(String[] args) {
 		System.loadLibrary("opencv_java248");
-		System.out.println(readPlate(new Mat())); // push car image
+		System.out.println(readPlate()); // push car image
 	}
 }
