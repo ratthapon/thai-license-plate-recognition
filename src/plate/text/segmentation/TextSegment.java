@@ -1,10 +1,11 @@
-package text.segmentation;
+package plate.text.segmentation;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
@@ -13,8 +14,10 @@ import org.opencv.core.Size;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
-class TextSegment extends Imgproc {
-	private static int structureElementSize = 5;
+import com.googlecode.javacv.cpp.opencv_legacy.CvImageDrawer;
+
+public class TextSegment extends Imgproc {
+	private static int structureElementSize = 15;
 	private static float calibrate = structureElementSize / 2;
 	private static int charSizeThresh = 90; // px 2/3 of plat hieght
 
@@ -23,13 +26,19 @@ class TextSegment extends Imgproc {
 		ArrayList<Mat> charList = new ArrayList<Mat>();
 		resize(plateImg, plateImg, new Size(600, 270));
 		cvtColor(plateImg, plateImg, COLOR_RGBA2GRAY);
-		threshold(plateImg, plateImg, 192, 255, THRESH_BINARY);
+		GaussianBlur(plateImg, plateImg, new Size(5, 5), 3);
+		threshold(plateImg, plateImg, 0, 255, THRESH_OTSU);
+		threshold(plateImg, plateImg, 0, 255, THRESH_BINARY_INV);
+		Highgui.imwrite("log/preprocess.jpg", plateImg);
 
 		// apply some dilation and erosion to join the gaps
-		Mat structureElement = getStructuringElement(MORPH_RECT, new Size(
-				structureElementSize, structureElementSize));
-		dilate(plateImg, plateImg, structureElement);
-		erode(plateImg, plateImg, structureElement);
+		for (int i = 1; i < structureElementSize; i++) {
+			Mat structureElement = getStructuringElement(MORPH_RECT, new Size(
+					i, i));
+			dilate(plateImg, plateImg, structureElement);
+			erode(plateImg, plateImg, structureElement);
+		}
+		Highgui.imwrite("log/morphological.jpg", plateImg);
 
 		// Find the contours
 		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
@@ -77,7 +86,7 @@ class TextSegment extends Imgproc {
 		System.loadLibrary("opencv_java248");
 		Mat img;
 		ArrayList<Mat> charList;
-		img = Highgui.imread("detectplate.jpg");
+		img = Highgui.imread("LP2.jpg");
 		resize(img, img, new Size(600, 270));
 		charList = segmentText(img);
 		int i = 1;
