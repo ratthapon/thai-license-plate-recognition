@@ -3,13 +3,17 @@ package plate.text.segmentation;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.image.WritableRaster;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Scanner;
 
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -31,8 +35,8 @@ public class TextSegment extends Imgproc {
 	private int plateHeight = 90; // px
 	private int plateWidth = (int) (20.0 / 9.0 * plateHeight); // px
 	private int charSizeThresh = plateHeight * 1 / 3; // px 1/3 of plat
-																// hieght
-	
+														// hieght
+
 	private ArrayList<IplImage> segmentText(IplImage iplImage) {
 		ByteBuffer iplBuffer = iplImage.getByteBuffer();
 		// Create a Matrix the same size of image
@@ -63,8 +67,8 @@ public class TextSegment extends Imgproc {
 		}
 		return iplImageList;
 	}
-	
-	public static ArrayList<Mat> getListMatOfCharImage(Mat image){
+
+	public static ArrayList<Mat> getListMatOfCharImage(Mat image) {
 		if (textSegmentObj == null) {
 			textSegmentObj = new TextSegment();
 		}
@@ -191,41 +195,66 @@ public class TextSegment extends Imgproc {
 		}
 
 		ArrayList<Mat> charList;
-		String[] filename = { "1.jpg", "2.jpg", "3.jpg", "4.jpg", "5.jpg",
-				"6.jpg", "7.jpg", "8.jpg", "9.jpg", "10.jpg", "11.png",
-				"12.jpg", "13.jpg", "14.png", "15.jpg", "16.jpg", "17.jpg",
-				"18.jpg" }; // , "LP5.jpg"
-		String[] ans = { "กก35", "กจ99", "กด7171", "กค9535", "ก2219", "ปพ6945",
-				"ฎผ6557", "ฎก7700", "ชห9515", "จร638", "กอ9999", "กท9999",
-				"กท1000", "983597", "704928", "๔๒๗๔๙", "06469", "40ม2", };
-		for (int i = 0; i < filename.length; i++) {
-			// create new file
-			String dirName = "sourcedata/LP/";
-			logtag = filename[i].split(".j")[0].split(".p")[0];
-			System.out.println("LOGTAG " + logtag + " read "
-					+ (dirName + filename[i]));
-			(new File("segment/" + logtag)).mkdir();
-			(new File("log/" + logtag)).mkdir();
-			if ((new File(dirName + filename[i])).exists()) {
-				Mat plateImage = Highgui.imread(dirName + filename[i]);
-				charList = getListMatOfCharImage(plateImage);
-				int j;
-				j = 1;
-				try {
-					(new File("segment/" + logtag + "/" + ans[i]))
-							.createNewFile();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				System.out.println("LP length " + charList.size());
-				for (Mat mat : charList) {
-					Highgui.imwrite("segment/" + logtag + "/" + logtag + "_"
-							+ (j++) + ".jpg", mat);
-				}
-			} else {
-				System.out.println("File not found");
+		folder = new File("sourcedata/LP/");
+		folder.mkdir();
+		FileReader fileReader;
+		BufferedReader bufferedReader;
+		List<String> lines;
+		String line;
+		try {
+			fileReader = new FileReader("sourcedata/LP/plate_name.txt");
+			bufferedReader = new BufferedReader(fileReader);
+			lines = new ArrayList<String>();
+			line = null;
+			while ((line = bufferedReader.readLine()) != null) {
+			    lines.add(line);
 			}
+			bufferedReader.close();
+			String[] fileNames = lines.toArray(new String[lines.size()]);
+			
+			fileReader = new FileReader("sourcedata/LP/lebel.txt");
+			bufferedReader = new BufferedReader(fileReader);
+			lines = new ArrayList<String>();
+			line = null;
+			while ((line = bufferedReader.readLine()) != null) {
+			    lines.add(line);
+			}
+			bufferedReader.close();
+			String[] ans = lines.toArray(new String[lines.size()]);
+			for (int i = 0; i < fileNames.length; i++) {
+				// create new file
+				String dirName = "sourcedata/LP/";
+				logtag = fileNames[i].split(".j")[0].split(".p")[0];
+				System.out.println("LOGTAG " + logtag + " read "
+						+ (dirName + fileNames[i]));
+				(new File("segment/" + logtag)).mkdir();
+				(new File("log/" + logtag)).mkdir();
+				File sourceFile = new File("sourcedata/LP/"+fileNames[i]);
+				if (sourceFile.exists() && sourceFile.isFile()) {
+					Mat plateImage = Highgui.imread(dirName + fileNames[i]);
+					charList = getListMatOfCharImage(plateImage);
+					int j;
+					j = 1;
+					try {
+						(new File("segment/" + logtag + "/" + ans[i]))
+								.createNewFile();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					System.out.println("LP length " + charList.size());
+					for (Mat mat : charList) {
+						Highgui.imwrite("segment/" + logtag + "/" + logtag + "_"
+								+ (j++) + ".bmp", mat);
+					}
+				} else {
+					System.out.println("File not found");
+				}
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 
