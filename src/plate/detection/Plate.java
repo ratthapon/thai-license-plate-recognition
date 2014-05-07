@@ -28,7 +28,6 @@ public class Plate {
 		Mat grayPlate = plateMat.clone();
 		Imgproc.cvtColor(grayPlate, grayPlate, Imgproc.COLOR_RGB2GRAY);
 		this.density = density;
-		//System.out.println("Created new plate instance.");
 	}
 
 	public Mat toMat() {
