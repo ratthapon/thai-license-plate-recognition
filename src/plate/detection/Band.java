@@ -70,7 +70,7 @@ public class Band {
 	public List<Plate> clipPlates(Mat carImage, int maxPlate) {
 		List<Plate> clipPlates = this.clipPlates(carImage);
 		Collections.sort(clipPlates, Plate.PLATE_HUERISTIC_CAMPATATOR);
-		if (clipPlates.size() <= 0) {
+		if (clipPlates.size() <= 0 || clipPlates.size() > maxPlate) {
 			return clipPlates;
 		}
 		return clipPlates.subList(0, maxPlate);
@@ -127,7 +127,6 @@ public class Band {
 
 	public List<Plate> clipPlates(Mat carImage) {
 		Mat grayImage = this.bandMat.clone();
-		System.out.println("Plate clipping.");
 
 		// preprocess plate img
 		Imgproc.cvtColor(grayImage, grayImage, Imgproc.COLOR_RGBA2GRAY);

@@ -7,6 +7,7 @@ import java.util.Vector;
 
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
+import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
 import utils.Utils;
@@ -14,12 +15,16 @@ import utils.Utils;
 public class Car {
 	private Mat carImage;
 
-	Car(Mat image) {
+	public Car(String filePath) {
+		this(Highgui.imread(filePath));
+	}
+
+	public Car(Mat image) {
 		System.loadLibrary("opencv_java248");
 		carImage = new Mat();
 		image.copyTo(carImage);
 		int w = image.cols();
-		int h = (int)(600.0/w * image.rows());
+		int h = (int) (600.0 / w * image.rows());
 		Imgproc.resize(carImage, carImage, new Size(600, h));
 		System.out.println("Created new car instance.");
 	}
@@ -30,29 +35,28 @@ public class Car {
 		Mat image = Utils.verticalLine(carImage);
 		for (int i = 0; i < maxCandidate; i++) {
 			Band band = clipBand(image);
-			if (band.height <=1) {
+			if (band.height <= 1) {
 				break;
 			}
 			Mat zeros = Mat.zeros(band.height, band.width, image.type());
 			zeros.copyTo(image.submat(band.getBoundingRect()));
 			clipBands.add(band);
 		}
-		
+
 		// sort band by heuristic
 		Collections.sort(clipBands, Band.HUERISTIC_COMPARATOR);
-		System.out.println("Clipped "+clipBands.size()+" bands");
+		// System.out.println("Clipped " + clipBands.size() + " bands");
 		return clipBands;
 	}
-	
-	
-	public Band clipBand(){
+
+	public Band clipBand() {
 		Mat grayImage = Utils.verticalLine(carImage);
-		return  clipBand(grayImage);
+		return clipBand(grayImage);
 	}
 
 	private Band clipBand(Mat grayImage) {
 		Band band;
-		//System.out.println("Project car image in Y axis");
+		// System.out.println("Project car image in Y axis");
 		Vector<Byte> pyMagnitude = Utils.projectMatY(grayImage);
 		byte ybm = Collections.max(pyMagnitude);
 		int ybmIndex = pyMagnitude.indexOf(ybm);
@@ -82,8 +86,8 @@ public class Car {
 				break;
 			}
 		}
-		
-		System.out.println("Calibrate band coordinate");
+
+		// System.out.println("Calibrate band coordinate");
 
 		int calibrate = (int) ((yb1Index - yb0Index) * 0.1);
 		yb0Index -= calibrate;
@@ -94,8 +98,33 @@ public class Car {
 		if (yb1Index > grayImage.rows() - 1) {
 			yb1Index = grayImage.rows() - 1;
 		}
-		band = new Band(this.carImage.clone(), yb0Index, yb1Index,ybm);
+		band = new Band(this.carImage.clone(), yb0Index, yb1Index, ybm);
 		return band;
+	}
+
+	public List<Plate> clipPlates(int maxPlate) {
+		Band bands = this.clipBand();
+		List<Plate> plates = new ArrayList<Plate>();
+		plates.addAll(bands.clipPlates(this.toMat()));
+		return plates;
+	}
+
+	public List<Plate> clipPlatesMaxBandLimit(int maxBand) {
+		List<Band> bands = this.clipBands(maxBand);
+		List<Plate> plates = new ArrayList<Plate>();
+		for (Band band : bands) {
+			plates.addAll(band.clipPlates(this.toMat()));
+		}
+		return plates;
+	}
+
+	public List<Plate> clipPlates(int maxBand, int maxPlate) {
+		List<Band> bands = this.clipBands(maxBand);
+		List<Plate> plates = new ArrayList<Plate>();
+		for (Band band : bands) {
+			plates.addAll(band.clipPlates(this.toMat(), maxPlate));
+		}
+		return plates;
 	}
 
 	public Mat toMat() {
