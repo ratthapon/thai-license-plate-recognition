@@ -13,14 +13,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Scanner;
 
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
-import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
@@ -30,12 +28,12 @@ import com.googlecode.javacv.cpp.opencv_core.IplImage;
 public class TextSegment extends Imgproc {
 	private static TextSegment textSegmentObj = null;
 	private static String logtag = ""; // TODO debug var
-	private int structureElementSize = 3;
-	private double calibrate = Math.floor(structureElementSize / 2.0);
 	private int plateHeight = 90; // px
-	private int plateWidth = (int) (20.0 / 9.0 * plateHeight); // px
-	private int charSizeThresh = plateHeight * 1 / 3; // px 1/3 of plat
+	private int plateWidth = (int) (20.0 / 4.0 * plateHeight); // px
+	//private int charSizeThresh = plateHeight * 1 / 3; // px 1/3 of plat
 														// hieght
+	private int structureElementSize = (int) (0.01 * plateHeight);
+	private double calibrate = Math.floor(structureElementSize / 2.0);
 
 	private ArrayList<IplImage> segmentText(IplImage iplImage) {
 		ByteBuffer iplBuffer = iplImage.getByteBuffer();
@@ -52,7 +50,7 @@ public class TextSegment extends Imgproc {
 		Highgui.imwrite("log/" + logtag + "/iplmat.jpg", image); // TODO Log
 
 		ArrayList<IplImage> iplImageList = new ArrayList<>();
-		ArrayList<Mat> charList;
+		List<Mat> charList;
 		charList = segmentText(image);
 		for (Mat mat : charList) {
 			data = new byte[(int) mat.size().area()];
@@ -68,16 +66,17 @@ public class TextSegment extends Imgproc {
 		return iplImageList;
 	}
 
-	public static ArrayList<Mat> getListMatOfCharImage(Mat image) {
+	public static List<Mat> getListMatOfCharImage(Mat image) {
 		if (textSegmentObj == null) {
 			textSegmentObj = new TextSegment();
 		}
 		return textSegmentObj.segmentText(image);
 	}
 
-	private ArrayList<Mat> segmentText(Mat image) {
-		resize(image, image, new Size(plateWidth, plateHeight));
+	private List<Mat> segmentText(Mat image) {
 		Mat plateImg = image.clone();
+		resize(plateImg, plateImg, new Size(plateWidth, plateHeight));
+
 		// preprocessing image
 		cvtColor(plateImg, plateImg, COLOR_RGB2GRAY);
 		// GaussianBlur(plateImg, plateImg, new Size(3, 3), 3);
@@ -93,7 +92,7 @@ public class TextSegment extends Imgproc {
 			dilate(plateImg, plateImg, structureElement);
 			erode(plateImg, plateImg, structureElement);
 		}
-		Highgui.imwrite("log/" + logtag + "/morphological.jpg", plateImg);// TODO
+		//Highgui.imwrite("log/" + logtag + "/morphological.jpg", plateImg);// TODO
 																			// Log
 
 		// Find the contours
@@ -105,7 +104,7 @@ public class TextSegment extends Imgproc {
 		findContours(plateImg, contours, hierarchy, RETR_LIST,
 				CHAIN_APPROX_SIMPLE);
 		cvtColor(plateImg, plateImg, COLOR_GRAY2RGBA);
-		System.out.println("size of contours " + contours.size());// TODO Log
+		//System.out.println("size of contours " + contours.size());// TODO Log
 
 		// create bounding rect for crop
 		for (MatOfPoint matOfPoint : contours) {
@@ -120,19 +119,24 @@ public class TextSegment extends Imgproc {
 
 			// determine char candidate using criteria
 			// 1. char h must relate to charSizeThresh
-			boolean rule1 = tempRect.height > charSizeThresh
-					&& tempRect.height < charSizeThresh * 2;
+			boolean rule1 = tempRect.height > plateHeight * 0.55
+					&& tempRect.height < plateHeight * 0.95;
 			// 2. char size must relate to ratio of w and h of it self
-			boolean rule2 = tempRect.width > charSizeThresh * 1 / 3
-					&& tempRect.width < charSizeThresh * 2;
+			boolean rule2 = tempRect.width > plateHeight * 0.6 * 1 / 3
+					&& tempRect.width < plateHeight * 0.6 * 2;
 			if (rule1 && rule2) {
 				boundingRectPoint.add(tmp);
 				boundingRect.add(boundingRect(tmp));
 				candidateRectList.add(boundingRect(tmp));
 			}
 		}
-		drawContours(image, boundingRectPoint, -1, new Scalar(0, 255, 0), 1);
-		Highgui.imwrite("log/" + logtag + "/contours.jpg", image);// TODO Log
+
+		//Mat boudingLog = image.clone();
+		//resize(boudingLog, boudingLog, new Size(plateWidth, plateHeight));
+		//drawContours(boudingLog, boundingRectPoint, -1, new Scalar(0, 255, 0),
+		//		1);
+		//Highgui.imwrite("log/" + logtag + "/contours.jpg", boudingLog);// TODO
+																		// Log
 		// 3. remove all contour that contained by other contour
 		int i = 0;
 		for (Rect inner : candidateRectList) {
@@ -170,7 +174,7 @@ public class TextSegment extends Imgproc {
 
 	private static void testSegment() {
 		System.loadLibrary("opencv_java248");
-
+	
 		// remove old file
 		File folder = new File("segment/");
 		folder.mkdir();
@@ -193,8 +197,8 @@ public class TextSegment extends Imgproc {
 				(new File("log/" + listOfFiles[n].getName())).delete();
 			}
 		}
-
-		ArrayList<Mat> charList;
+	
+		List<Mat> charList;
 		folder = new File("sourcedata/LP/");
 		folder.mkdir();
 		FileReader fileReader;
@@ -207,29 +211,30 @@ public class TextSegment extends Imgproc {
 			lines = new ArrayList<String>();
 			line = null;
 			while ((line = bufferedReader.readLine()) != null) {
-			    lines.add(line);
+				lines.add(line);
 			}
 			bufferedReader.close();
 			String[] fileNames = lines.toArray(new String[lines.size()]);
-			
+	
 			fileReader = new FileReader("sourcedata/LP/lebel.txt");
 			bufferedReader = new BufferedReader(fileReader);
 			lines = new ArrayList<String>();
 			line = null;
 			while ((line = bufferedReader.readLine()) != null) {
-			    lines.add(line);
+				lines.add(line);
 			}
 			bufferedReader.close();
 			String[] ans = lines.toArray(new String[lines.size()]);
 			for (int i = 0; i < fileNames.length; i++) {
 				// create new file
 				String dirName = "sourcedata/LP/";
-				logtag = fileNames[i].split(".j")[0].split(".p")[0];
+				logtag = fileNames[i].split(".j")[0].split(".p")[0].replace(
+						"/", "_");
 				System.out.println("LOGTAG " + logtag + " read "
 						+ (dirName + fileNames[i]));
 				(new File("segment/" + logtag)).mkdir();
 				(new File("log/" + logtag)).mkdir();
-				File sourceFile = new File("sourcedata/LP/"+fileNames[i]);
+				File sourceFile = new File("sourcedata/LP/" + fileNames[i]);
 				if (sourceFile.exists() && sourceFile.isFile()) {
 					Mat plateImage = Highgui.imread(dirName + fileNames[i]);
 					charList = getListMatOfCharImage(plateImage);
@@ -244,8 +249,8 @@ public class TextSegment extends Imgproc {
 					}
 					System.out.println("LP length " + charList.size());
 					for (Mat mat : charList) {
-						Highgui.imwrite("segment/" + logtag + "/" + logtag + "_"
-								+ (j++) + ".bmp", mat);
+						Highgui.imwrite("segment/" + logtag + "/" + logtag
+								+ "_" + (j++) + ".bmp", mat);
 					}
 				} else {
 					System.out.println("File not found");

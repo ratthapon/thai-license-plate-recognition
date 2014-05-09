@@ -14,6 +14,7 @@ import org.opencv.core.Point;
 import org.opencv.core.Range;
 import org.opencv.core.Rect;
 import org.opencv.core.Size;
+import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
 import utils.Utils;
@@ -143,8 +144,10 @@ public class Band {
 		Imgproc.dilate(grayImage, grayImage, structureElementKernel);
 		Mat morpho = grayImage.clone();
 
-		//Highgui.imwrite("platelocalize/" + PlateDetector.logtag
-		//		+ "_band_morpho.jpg", grayImage);
+		Highgui.imwrite("platelocalize/" + system.Core.logtag
+				+ "_BAND_MORPH.jpg", grayImage);
+		Highgui.imwrite("platelocalize/" + system.Core.logtag
+				+ "_BAND_CLIPPED.jpg", this.toMat());
 
 		// Find the contours
 		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
@@ -191,17 +194,15 @@ public class Band {
 			boundingRect.set(i, tmpRect);
 			boundingRectPoint.add(tmp);
 		}
-		//Imgproc.drawContours(carImage, boundingRectPoint, -1, new Scalar(0,
-		//		255, 0), 3);
+		// Imgproc.drawContours(carImage, boundingRectPoint, -1, new Scalar(0,
+		// 255, 0), 3);
 		List<MatOfPoint> bandRect = new ArrayList<MatOfPoint>();
 		Point p1 = new Point(0, top);
 		Point p2 = new Point(width - 1, top);
 		Point p3 = new Point(width - 1, bottom);
 		Point p4 = new Point(0, bottom);
 		bandRect.add(new MatOfPoint(p1, p2, p3, p4));
-		//Imgproc.drawContours(carImage, bandRect, -1, new Scalar(0, 255, 0), 3);
-		//Highgui.imwrite("platelocalize/" + PlateDetector.logtag
-		//		+ "_plate_local.jpg", carImage);
+
 		List<Plate> result = new ArrayList<Plate>();
 		for (Rect rect : boundingRect) {
 			double density = Core.sumElems(morpho).val[0]

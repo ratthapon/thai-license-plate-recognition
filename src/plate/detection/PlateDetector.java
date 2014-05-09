@@ -6,7 +6,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.opencv.core.Core;
@@ -41,7 +40,8 @@ public class PlateDetector extends Imgproc {
 					+ ".jpg",
 					image.submat(candidateBand.get(i).getBoundingRect()));
 			Highgui.imwrite("log/" + logtag + "/plate_band_" + i + "_" + logtag
-					+ ".jpg", candidateBand.get(i).clipPlate(image).toMat());
+					+ ".jpg", candidateBand.get(i).clipPlates(image).get(0)
+					.toMat());
 			Highgui.imwrite("log/" + logtag + "/edge_band_" + i + "_" + logtag
 					+ ".jpg", Utils.histoGraph(bandMat, true, false));
 		}
@@ -58,7 +58,9 @@ public class PlateDetector extends Imgproc {
 	public static Mat detectPlateByMorphological(Mat image) {
 		System.loadLibrary("opencv_java248");
 		Mat carImage = image.clone();
-		resize(carImage, carImage, new Size(1366, 768));
+		int w = image.cols();
+		int h = 400 / w * image.rows();
+		Imgproc.resize(carImage, carImage, new Size(400, h));
 		// preprocess plate img
 		cvtColor(carImage, carImage, COLOR_RGBA2GRAY);
 		GaussianBlur(carImage, carImage, new Size(3, 3), 5);
@@ -69,8 +71,8 @@ public class PlateDetector extends Imgproc {
 		// carImage = Utils.verticalLine(carImage);
 		Highgui.imwrite("platelocalize/TOPHAT_" + logtag + ".jpg", carImage);
 		threshold(carImage, carImage, 128, 255, THRESH_OTSU);
-		//adaptiveThreshold(carImage, carImage, 255,
-			//	Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY, 3, 3);
+		// adaptiveThreshold(carImage, carImage, 255,
+		// Imgproc.ADAPTIVE_THRESH_GAUSSIAN_C, Imgproc.THRESH_BINARY, 3, 3);
 		Highgui.imwrite("platelocalize/THRESH_BINARY_" + logtag + ".jpg",
 				carImage);
 		// threshold(carImage, carImage, 128, 255, THRESH_OTSU);
@@ -78,10 +80,12 @@ public class PlateDetector extends Imgproc {
 		// for (int i = strelSize-1; i < strelSize; i++) {
 		Mat structureElementKernel = Imgproc.getStructuringElement(
 				Imgproc.MORPH_RECT, new Size(3, 3));
-		Imgproc.morphologyEx(carImage, carImage, Imgproc.MORPH_CLOSE, structureElementKernel);
-		//Imgproc.morphologyEx(carImage, carImage, Imgproc.MORPH_OPEN, structureElementKernel);
-		//Imgproc.dilate(carImage, carImage, structureElementKernel);
-		//Imgproc.erode(carImage, carImage, structureElementKernel);
+		Imgproc.morphologyEx(carImage, carImage, Imgproc.MORPH_CLOSE,
+				structureElementKernel);
+		// Imgproc.morphologyEx(carImage, carImage, Imgproc.MORPH_OPEN,
+		// structureElementKernel);
+		// Imgproc.dilate(carImage, carImage, structureElementKernel);
+		// Imgproc.erode(carImage, carImage, structureElementKernel);
 		Highgui.imwrite("platelocalize/MORPH_" + logtag + ".jpg", carImage);
 		Mat thresh = carImage.clone();
 
@@ -122,7 +126,7 @@ public class PlateDetector extends Imgproc {
 				boundingRect.add(newRect);
 			}
 		}
-		Collections.sort(boundingRect, Plate.PLATE_WH_RATIO_COMPARATOR);
+		// Collections.sort(boundingRect, Plate.PLATE_HUERISTIC_CAMPATATOR);
 		for (int i = 0; i < boundingRect.size(); i++) {
 			Rect tmpRect = Utils.expandRect(boundingRect.get(i), 0.01,
 					new Size(image.cols(), image.rows()));
@@ -137,7 +141,7 @@ public class PlateDetector extends Imgproc {
 			boundingRectPoint.add(tmp);
 		}
 		Mat bound = image.clone();
-		drawContours(bound, boundingRectPoint, -1, new Scalar(0, 255, 0), 1);
+		//drawContours(bound, boundingRectPoint, -1, new Scalar(0, 255, 0), 1);
 
 		Highgui.imwrite("platelocalize/bound_" + logtag + ".jpg", bound);
 		if (boundingRect.size() <= 0) {
@@ -330,7 +334,7 @@ public class PlateDetector extends Imgproc {
 			}
 		}
 
-		Collections.sort(boundingRect, Plate.PLATE_WH_RATIO_COMPARATOR);
+		// Collections.sort(boundingRect, Plate.PLATE_HUERISTIC_CAMPATATOR);
 		for (int i = 0; i < boundingRect.size(); i++) {
 			Rect tmpRect = Utils.expandRect(boundingRect.get(i), 0.01,
 					new Size(image.cols(), image.rows()));
@@ -395,23 +399,28 @@ public class PlateDetector extends Imgproc {
 				file.mkdir();
 				System.out.println(filename[i]);
 				Mat grayImage = Highgui.imread("sourcedata/CAR/" + filename[i]);
-				Imgproc.resize(grayImage, grayImage, new Size(1366, 768));
+				int w = grayImage.cols();
+				int h = (int) (400.0 / w * grayImage.rows());
+				Imgproc.resize(grayImage, grayImage, new Size(400, h));
 				Imgproc.cvtColor(grayImage, grayImage, Imgproc.COLOR_RGB2GRAY);
-
 
 				Car car = new Car(Highgui.imread("sourcedata/CAR/"
 						+ filename[i]));
-				List<Band> band = car.clipBands(7);
-				if (band.size() == 0
-						|| band.get(0).clipPlates(car.toMat(), 1).size() == 0) {
+				List<Band> bands = car.clipBands(7);
+				List<Plate> plates = new ArrayList<Plate>();
+				for (Band band : bands) {
+					plates.addAll(band.clipPlates(car.toMat()));
+				}
+				System.out.println("Foune candidate plate "+plates.size());
+				if (plates.size() <= 0) {
 					System.out.println("image " + filename[i] + " not found");
 					continue;
 				}
-				Highgui.imwrite("platelocalize/" + filename[i]
-						+ "_verticline_band.jpg",
-						Utils.verticalLine(band.get(0).toMat()));
-				result = band.get(0).clipPlates(car.toMat(), 1).get(0).toMat();
-				Highgui.imwrite("platelocalize/" + filename[i], result);
+				int p = 1;
+				for (Plate plate : plates) {
+					Highgui.imwrite("platelocalize/" + logtag + "_PLATE_" + (p++)
+							+ ".jpg", plate.toMat());
+				}
 
 			}
 		} catch (FileNotFoundException e) {
@@ -419,11 +428,6 @@ public class PlateDetector extends Imgproc {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
-
-	public static void main(String[] args) {
-		detectPlate();
-		//testDetectPlate();
 	}
 
 }
