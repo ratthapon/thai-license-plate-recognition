@@ -6,16 +6,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.stream.DoubleStream;
 
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfDouble;
 
 public class Model {
-	/**
-	 * 
-	 */
 
 	private Mat V;
 	private Mat meanVec;
@@ -55,10 +50,10 @@ public class Model {
 			Mat outEigenvectors = new Mat();
 			Mat outResponse = new Mat();
 
-			V.convertTo(outV, CvType.CV_64F);
-			meanVec.convertTo(outMeanVec, CvType.CV_64F);
-			eigenvectors.convertTo(outEigenvectors, CvType.CV_64F);
-			response.convertTo(outResponse, CvType.CV_64F);
+			V.convertTo(outV, CvType.CV_64FC1);
+			meanVec.convertTo(outMeanVec, CvType.CV_64FC1);
+			eigenvectors.convertTo(outEigenvectors, CvType.CV_64FC1);
+			response.convertTo(outResponse, CvType.CV_64FC1);
 			double[] VData = new double[(int) (outV.size().area())];
 			outV.get(0, 0, VData);
 			double[] meanVecData = new double[(int) (outMeanVec.size().area())];
@@ -69,8 +64,12 @@ public class Model {
 			double[] responseData = new double[(int) (outResponse.size().area())];
 			outResponse.get(0, 0, responseData);
 
-			PrimitiveModel modelStruct = new PrimitiveModel(VData,new int[2], meanVecData,new int[2],
-					eigenvectorsData,new int[2], responseData,new int[2], trainCount);
+			PrimitiveModel modelStruct = new PrimitiveModel(VData, outV.cols(),
+					outV.rows(), meanVecData, outMeanVec.cols(),
+					outMeanVec.rows(), eigenvectorsData,
+					outEigenvectors.cols(), outEigenvectors.rows(),
+					responseData, outResponse.cols(), outResponse.rows(),
+					trainCount);
 
 			fos = new FileOutputStream(fileName);
 			oos = new ObjectOutputStream(fos);
@@ -78,10 +77,8 @@ public class Model {
 			oos.flush();
 			oos.close();
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -96,22 +93,7 @@ public class Model {
 		this.response = response;
 		this.trainCount = trainCount;
 	}
-
-	public Model(double[] v, double[] meanVec, double[] eigenvectors,
-			double[] response, int trainCount) {
-		super();
-		System.loadLibrary("opencv_java248");
-		V = new Mat();
-		V.put(0, 0, v);
-		this.meanVec = new Mat();
-		this.meanVec.put(0, 0, meanVec);
-		this.eigenvectors = new Mat();
-		this.eigenvectors.put(0, 0, eigenvectors);
-		this.response = new Mat();
-		this.response.put(0, 0, response);
-		this.trainCount = trainCount;
-	}
-
+	
 	public Model(String fileName) {
 		System.loadLibrary("opencv_java248");
 		FileInputStream fis;
@@ -121,28 +103,29 @@ public class Model {
 			fis = new FileInputStream(fileName);
 			ois = new ObjectInputStream(fis);
 			modelStruct = (PrimitiveModel) ois.readObject();
-			System.out.println("Primitive "+modelStruct.trainCount);
-			V = new MatOfDouble(modelStruct.V);
-			V.convertTo(V, CvType.CV_64FC1);
+			
+			V = new Mat(modelStruct.vrow, modelStruct.vcol, CvType.CV_64FC1);
 			V.put(0, 0, modelStruct.V);
-			System.out.println("modelStruct.V "+modelStruct.V.length);
-			System.out.println(V.dump());
-			this.meanVec = new Mat();
+			V.convertTo(V, CvType.CV_32FC1);
+			this.meanVec = new Mat(modelStruct.mrow, modelStruct.mcol,
+					CvType.CV_64FC1);
 			this.meanVec.put(0, 0, modelStruct.meanVec);
-			this.eigenvectors = new Mat();
+			this.meanVec.convertTo(this.meanVec, CvType.CV_32FC1);
+			this.eigenvectors = new Mat(modelStruct.erow, modelStruct.ecol,
+					CvType.CV_64FC1);
 			this.eigenvectors.put(0, 0, modelStruct.eigenvectors);
-			this.response = new Mat();
+			this.eigenvectors.convertTo(this.eigenvectors, CvType.CV_32FC1);
+			this.response = new Mat(modelStruct.rrow, modelStruct.rcol,
+					CvType.CV_64FC1);
 			this.response.put(0, 0, modelStruct.response);
+			this.response.convertTo(this.response, CvType.CV_32FC1);
 			this.trainCount = modelStruct.trainCount;
 
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
