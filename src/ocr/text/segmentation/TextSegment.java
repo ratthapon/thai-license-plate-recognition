@@ -82,7 +82,7 @@ public class TextSegment extends Imgproc {
 		// GaussianBlur(plateImg, plateImg, new Size(3, 3), 3);
 		threshold(plateImg, plateImg, 0, 255, THRESH_OTSU);
 		threshold(plateImg, plateImg, 0, 255, THRESH_BINARY_INV);
-		Highgui.imwrite("log/" + logtag + "/preprocess.jpg", plateImg);
+		//Highgui.imwrite("log/" + logtag + "/preprocess.jpg", plateImg);
 		Mat preprocessPlate = plateImg.clone();
 
 		// apply some dilation and erosion to join the gaps

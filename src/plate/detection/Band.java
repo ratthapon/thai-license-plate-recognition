@@ -144,10 +144,10 @@ public class Band {
 		Imgproc.dilate(grayImage, grayImage, structureElementKernel);
 		Mat morpho = grayImage.clone();
 
-		Highgui.imwrite("platelocalize/" + system.ProcessingCore.logtag
-				+ "_BAND_MORPH.jpg", grayImage);
-		Highgui.imwrite("platelocalize/" + system.ProcessingCore.logtag
-				+ "_BAND_CLIPPED.jpg", this.toMat());
+		//Highgui.imwrite("platelocalize/" + system.ProcessingCore.logtag
+		//		+ "_BAND_MORPH.jpg", grayImage);
+		//Highgui.imwrite("platelocalize/" + system.ProcessingCore.logtag
+		//		+ "_BAND_CLIPPED.jpg", this.toMat());
 
 		// Find the contours
 		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();

@@ -2,8 +2,6 @@ package ocr.text.trainer;
 
 import java.io.Serializable;
 
-import org.opencv.core.Size;
-
 class PrimitiveModel implements Serializable {
 	private static final long serialVersionUID = 1L;
 	public double[] V;

@@ -10,13 +10,11 @@ import java.util.List;
 
 import ocr.text.recognition.OCR;
 import ocr.text.segmentation.TextSegment;
-import ocr.text.trainer.Trainer;
 
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
-import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
 import plate.detection.Band;
@@ -116,28 +114,28 @@ public class ProcessingCore {
 							plate.getBoundingRect().y
 									+ plate.getBoundingRect().height);
 					contours.add(new MatOfPoint(p1, p2, p3, p4));
-					Highgui.imwrite("platelocalize/" + logtag + "_PLATE_"
-							+ (p++) + ".jpg", plate.toMat());
+					//Highgui.imwrite("platelocalize/" + logtag + "_PLATE_"
+					//		+ (p++) + ".jpg", plate.toMat());
 					List<Mat> charImageList = TextSegment
 							.getListMatOfCharImage(plate.toMat());
 					if (charImageList.size() >= 1) {
 						file = new File("platelocalize/" + logtag + "_CHAR/");
 						file.mkdir();
-						Highgui.imwrite("platelocalize/" + logtag + "_CHAR/"
-								+ logtag + "_PLATE_" + (p++) + ".jpg",
-								plate.toMat());
+						//Highgui.imwrite("platelocalize/" + logtag + "_CHAR/"
+						//		+ logtag + "_PLATE_" + (p++) + ".jpg",
+						//		plate.toMat());
 						isPlateCount++;
 					}
 					int c = 0;
 					for (Mat mat : charImageList) {
-						Highgui.imwrite("platelocalize/" + logtag + "_CHAR/"
-								+ logtag + "_CHAR_" + (c++) + ".jpg", mat);
+						//Highgui.imwrite("platelocalize/" + logtag + "_CHAR/"
+						//		+ logtag + "_CHAR_" + (c++) + ".jpg", mat);
 					}
 				}
 				Imgproc.drawContours(showBounding, contours, -1, new Scalar(0,
 						255, 0),3);
-				Highgui.imwrite("platelocalize/" + logtag + "_LOCATE_" + (p++)
-						+ ".jpg", showBounding);
+				//Highgui.imwrite("platelocalize/" + logtag + "_LOCATE_" + (p++)
+				//		+ ".jpg", showBounding);
 				// end of bounding plates
 				
 				// image for presentation session 2
@@ -160,12 +158,12 @@ public class ProcessingCore {
 				showBounding = car.toMat().clone();
 				Imgproc.drawContours(showBounding, bandBound, -1, new Scalar(0,
 						255, 0),3);
-				Highgui.imwrite("platelocalize/" + logtag + "_BAND.jpg", showBounding);
-				Highgui.imwrite("platelocalize/" + logtag + "_VERTICALLINE.jpg", Utils.verticalLine(car.toMat()));
+				//Highgui.imwrite("platelocalize/" + logtag + "_BAND.jpg", showBounding);
+				//Highgui.imwrite("platelocalize/" + logtag + "_VERTICALLINE.jpg", Utils.verticalLine(car.toMat()));
 				
 				Mat histogram = new Mat();
 				histogram = Utils.histoGraph(Utils.verticalLine(car.toMat()), false, true);
-				Highgui.imwrite("platelocalize/" + logtag + "_HISTLINE.jpg", histogram);
+				//Highgui.imwrite("platelocalize/" + logtag + "_HISTLINE.jpg", histogram);
 			}
 
 			System.out.println("Test "+testCount+" img. Found rect " + foundCount + ". Not found "
@@ -179,6 +177,7 @@ public class ProcessingCore {
 
 	private String readPlate(Mat carMat) {
 		// load car image 
+		System.loadLibrary("opencv_java248");
 		Car car = new Car(carMat);
 		// detect all plate
 		List<Plate> plates = new ArrayList<Plate>();
@@ -203,6 +202,7 @@ public class ProcessingCore {
 	public static void main(String[] args) {
 		System.loadLibrary("opencv_java248");
 		detectPlate();
+		
 		
 		//Trainer.train("trainFileNameList.txt", "trainLabelList.txt","400dpi_NB_TN_all.bin");
 		OCR.testClassifier();

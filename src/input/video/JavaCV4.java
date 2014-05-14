@@ -22,7 +22,7 @@ public class JavaCV4 {
 	/**
 	 * @param args
 	 */
-	public static void main(String[] args) {
+	public static void ttt(String[] args) {
 		// TODO Auto-generated method stub
 		/*
 		 * CvFont font = new CvFont(); int fontFace = CV_FONT_HERSHEY_SIMPLEX;
