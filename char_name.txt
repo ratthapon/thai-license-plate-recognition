@@ -1,0 +1,14 @@
+sourcedata\CHAR\c1.bmp
+sourcedata\CHAR\c2.bmp
+sourcedata\CHAR\c3.bmp
+sourcedata\CHAR\c4.bmp
+sourcedata\CHAR\c5.bmp
+sourcedata\CHAR\c6.bmp
+sourcedata\CHAR\c7.bmp
+sourcedata\CHAR\c8.bmp
+sourcedata\CHAR\c9.jpg
+sourcedata\CHAR\c10.jpg
+sourcedata\CHAR\c11.jpg
+sourcedata\CHAR\c12.jpg
+sourcedata\CHAR\c13.jpg
+sourcedata\CHAR\c14.jpg

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- WARNING: Eclipse auto-generated file.
+              Any modifications will be overwritten.
+              To include a user specific buildfile here, simply create one in the same
+              directory with the processing instruction <?eclipse.ant.import?>
+              as the first entry and export the buildfile again. --><project basedir="." default="build" name="OpenCV">
+    <property environment="env"/>
+    <property name="ECLIPSE_HOME" value="C:/eclipse-jee/eclipse"/>
+    <property name="junit.output.dir" value="junit"/>
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="1.7"/>
+    <property name="source" value="1.7"/>
+    <path id="JUnit 4.libraryclasspath">
+        <pathelement location="${ECLIPSE_HOME}/plugins/org.junit_4.11.0.v201303080030/junit.jar"/>
+        <pathelement location="${ECLIPSE_HOME}/plugins/org.hamcrest.core_1.3.0.v201303031735.jar"/>
+    </path>
+    <path id="OpenCV.classpath">
+        <pathelement location="bin"/>
+        <pathelement location="opencv/build/java/opencv-248.jar"/>
+        <pathelement location="lib/ffmpeg-2.1.1-windows-x86_64.jar"/>
+        <pathelement location="lib/javacpp.jar"/>
+        <pathelement location="lib/javacv-windows-x86_64.jar"/>
+        <pathelement location="lib/javacv.jar"/>
+        <pathelement location="lib/opencv-2.4.8-windows-x86_64.jar"/>
+        <path refid="JUnit 4.libraryclasspath"/>
+    </path>
+    <target name="init">
+        <mkdir dir="bin"/>
+        <copy includeemptydirs="false" todir="bin">
+            <fileset dir="src">
+                <exclude name="**/*.launch"/>
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+    <target name="clean">
+        <delete dir="bin"/>
+    </target>
+    <target depends="clean" name="cleanall"/>
+    <target depends="build-subprojects,build-project" name="build"/>
+    <target name="build-subprojects"/>
+    <target depends="init" name="build-project">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" includeantruntime="false" source="${source}" target="${target}">
+            <src path="src"/>
+            <classpath refid="OpenCV.classpath"/>
+        </javac>
+    </target>
+    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects"/>
+    <target description="copy Eclipse compiler jars to ant lib directory" name="init-eclipse-compiler">
+        <copy todir="${ant.library.dir}">
+            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar"/>
+        </copy>
+        <unzip dest="${ant.library.dir}">
+            <patternset includes="jdtCompilerAdapter.jar"/>
+            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar"/>
+        </unzip>
+    </target>
+    <target description="compile project with Eclipse compiler" name="build-eclipse-compiler">
+        <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
+        <antcall target="build"/>
+    </target>
+    <target name="Core">
+        <java classname="system.Core" failonerror="true" fork="yes">
+            <classpath refid="OpenCV.classpath"/>
+        </java>
+    </target>
+    <target name="HelloOpenCV">
+        <java classname="HelloOpenCV" failonerror="true" fork="yes">
+            <classpath refid="OpenCV.classpath"/>
+        </java>
+    </target>
+    <target name="JavaCV4">
+        <java classname="input.video.JavaCV4" failonerror="true" fork="yes">
+            <classpath refid="OpenCV.classpath"/>
+        </java>
+    </target>
+    <target name="PlateDetector">
+        <java classname="plate.detection.PlateDetector" failonerror="true" fork="yes">
+            <classpath refid="OpenCV.classpath"/>
+        </java>
+    </target>
+    <target name="plateDetectUTest">
+        <mkdir dir="${junit.output.dir}"/>
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="plate.detection.plateDetectUTest" todir="${junit.output.dir}"/>
+            <classpath refid="OpenCV.classpath"/>
+        </junit>
+    </target>
+    <target name="TestOpenCV (1)">
+        <java classname="TestOpenCV" failonerror="true" fork="yes">
+            <classpath refid="OpenCV.classpath"/>
+        </java>
+    </target>
+    <target name="TextSegment">
+        <java classname="plate.text.segmentation.TextSegment" failonerror="true" fork="yes">
+            <classpath refid="OpenCV.classpath"/>
+        </java>
+    </target>
+    <target name="Train">
+        <java classname="ocr.text.trainer.Train" failonerror="true" fork="yes">
+            <classpath refid="OpenCV.classpath"/>
+        </java>
+    </target>
+    <target name="Trainer">
+        <java classname="ocr.text.trainer.Trainer" failonerror="true" fork="yes">
+            <classpath refid="OpenCV.classpath"/>
+        </java>
+    </target>
+    <target name="junitreport">
+        <junitreport todir="${junit.output.dir}">
+            <fileset dir="${junit.output.dir}">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="frames" todir="${junit.output.dir}"/>
+        </junitreport>
+    </target>
+</project>

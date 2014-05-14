@@ -1,0 +1,63 @@
+clear all
+mapper = [65:90 97:122 161:207 209:210 212:217 223:224 226:237 48:57 240:249 35:36 38:47 60 62:64 91:93 123:125]';
+global feature;
+feature = [];
+dataChar = [];
+sumFeature = 0;
+classCount = 0;
+trainCount = 0;
+directory = 'F:/NSC/PCA/';
+lang = {'Thai','Numeric'};
+charType = {'normal'};
+% sizeFilter = [8 10 14 16 18 22];
+sizeFilter = [16];
+
+trainFilter = [10 20 30 40];
+testFilter = [11 21 31 41];
+c = [];
+
+fileList = [];
+classList = [];
+tic
+for langIdx=1:size(lang,2) % each language
+    classPath = dir(strcat(directory,lang{langIdx}));
+    for cIdx=3:size(classPath,1) % each class
+        % for cIdx=1:size(specify,2) % each class % specify
+        classCount = classCount + 1;
+        fCount = 0;
+        for ct=1:1 % each char type
+            fpath = strcat(directory,lang{langIdx},'/',classPath(cIdx).name,'/400/',charType{ct},'/')
+            %fpath = strcat(specify{cIdx},'\400\',charType{ct},'\'); % specify
+            flist = dir(fpath);
+            s = size(flist,1);
+            for i = 3:s % each file
+                fname = flist(i).name;
+                if strcmp(fname,'Thumbs.db')==1
+                    continue;
+                end
+                groupNum = regexp(fname,'_','split');
+                if sum(sizeFilter==str2double(groupNum{4}))>0
+                    if sum(trainFilter==str2double(groupNum{3}))>0
+                        fCount = fCount + 1;
+                        trainCount = trainCount + 1;
+                        fileName = strcat(fpath, fname);
+                        fileList = [fileList;{fileName} ];
+                        classList = [classList;str2num(classPath(cIdx).name)];
+                    end
+                end
+            end
+            
+        end
+        c=[c fCount];
+        fCount = 0;
+    end
+end
+
+fid = fopen('trainFileNameList.txt','w');
+fprintf(fid,'%s\n',fileList{:});
+fclose(fid);
+
+fid = fopen('trainLabelList.txt','w');
+fprintf(fid,'%d\n',classList);
+fclose(fid);
+

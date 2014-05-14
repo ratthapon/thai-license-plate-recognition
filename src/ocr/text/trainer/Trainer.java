@@ -56,9 +56,9 @@ public class Trainer {
 				charImageMat = Highgui.imread(fileName);
 				Imgproc.cvtColor(charImageMat, charImageMat,
 						Imgproc.COLOR_RGB2GRAY);
-
 				Imgproc.resize(charImageMat, charImageMat, new Size(32, 32));
 				charImageMat.convertTo(charImageMat, meanVec.type());
+				Imgproc.threshold(charImageMat, charImageMat, 0, 255, Imgproc.THRESH_BINARY_INV);
 				System.out.println(fileName);
 				Core.add(meanVec, charImageMat.reshape(1, 32 * 32), meanVec);
 				dataCharVectorList
@@ -87,17 +87,8 @@ public class Trainer {
 			Mat L = new MatOfDouble();
 			Core.gemm(dataChar.t(), dataChar, 1.0, Mat.zeros(dataChar.cols(),
 					dataChar.cols(), dataChar.type()), 0, L);
-			Mat eigenvalues = new Mat();
 			Mat eigenvectors = new Mat();
-			//Core.eigen(L, true, eigenvalues, eigenvectors);
-			//System.out.println("eigenvectors "+eigenvectors.dump());
-			//System.out.println("Core.mean"+Core.mean(eigenvectors));
-			Mat testEigen = new Mat();
 			Core.PCACompute(L, Mat.zeros(1, dataChar.cols(), dataChar.type()), eigenvectors);
-			System.out.println("testEigen "+eigenvectors.size());
-			System.out.println("dataChar "+dataChar.size());
-			System.out.println("Core.mean"+Core.mean(eigenvectors));
-			//System.out.println("mean"+mean.dump());
 
 			// find eigen vaector
 			Mat V = new MatOfDouble();
@@ -108,18 +99,6 @@ public class Trainer {
 			Mat feature = new MatOfDouble();
 			Core.gemm(V, dataChar, 1.0,
 					Mat.zeros(V.rows(), dataChar.cols(), V.type()), 0, feature);
-			
-			/*
-			 * // build feature vector Mat tr_vectors = new Mat(); Core.gemm(V,
-			 * dataChar, 1.0, Mat.zeros(V.rows(), dataChar.cols(), V.type()), 0,
-			 * tr_vectors); System.out.println("debug tr " +
-			 * eigenvectors.dump()); System.out.println(V.size());
-			 * 
-			 * List<Mat> tr_vectorsList = new Vector<Mat>();
-			 * tr_vectorsList.add(tr_vectors); tr_vectorsList.add(V); Mat
-			 * feature = new MatOfDouble(); Core.hconcat(tr_vectorsList,
-			 * feature); feature.convertTo(feature, CvType.CV_64F);
-			 */
 
 			fileReader = new FileReader(labelListName);
 			bufferedReader = new BufferedReader(fileReader);
@@ -161,8 +140,8 @@ public class Trainer {
 		}
 	}
 
-	public static void main(String[] args) {
-		train("trainFileNameList.txt", "trainLabelList.txt","fix.bin");
+	public static void utest() {
+		train("trainFileNameList.txt", "trainLabelList.txt","400dpi_NB_TN_all.bin");
 		OCR.testClassifier();
 
 	}
