@@ -23,7 +23,7 @@ import org.opencv.ml.CvKNearest;
 public class OCR {
 
 	private static Model model;
-	private static String modelPath = "fix.bin";
+	private static String modelPath = "400dpi_NB_TN_all.bin";
 
 	public static void testClassifier() {
 		//

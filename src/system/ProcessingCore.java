@@ -38,7 +38,7 @@ public class ProcessingCore {
 		List<String> lines;
 		String line;
 		try {
-			fileReader = new FileReader("sourcedata/CAR/car_name.txt");
+			fileReader = new FileReader("car_name.txt");
 			bufferedReader = new BufferedReader(fileReader);
 			lines = new ArrayList<String>();
 			line = null;
@@ -81,7 +81,7 @@ public class ProcessingCore {
 				System.out.println(filename[i]);
 				
 				// load car image 
-				Car car = new Car("sourcedata/CAR/" + filename[i]);
+				Car car = new Car(filename[i]);
 				// detect all plate
 				List<Plate> plates = new ArrayList<Plate>();
 				plates = car.clipPlatesMaxBandLimit(7);
@@ -205,6 +205,6 @@ public class ProcessingCore {
 		detectPlate();
 		
 		//Trainer.train("trainFileNameList.txt", "trainLabelList.txt","400dpi_NB_TN_all.bin");
-		//OCR.testClassifier();
+		OCR.testClassifier();
 	}
 }
