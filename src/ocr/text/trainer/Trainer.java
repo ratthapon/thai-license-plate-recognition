@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 
@@ -25,6 +26,8 @@ public class Trainer {
 
 	public static void train(String fileListName, String labelListName,String saveModelToFileName) {
 		System.loadLibrary("opencv_java248");
+		Date timer = new Date();
+		long startTime = timer.getTime();
 		FileReader fileReader;
 		BufferedReader bufferedReader;
 		List<String> lines;
@@ -48,8 +51,8 @@ public class Trainer {
 			Mat meanVec = MatOfDouble.zeros(32 * 32, 1, CvType.CV_32FC1);
 			List<Mat> dataCharVectorList = new Vector<Mat>();
 
-			for (int i = 0; i < filename.length; i++) {
-				String fileName = directory + filename[i];
+			for (int i = 0; i < filename.length; i++) { //filename.length
+				String fileName = filename[i];
 				charImageMat = Highgui.imread(fileName);
 				Imgproc.cvtColor(charImageMat, charImageMat,
 						Imgproc.COLOR_RGB2GRAY);
@@ -67,7 +70,7 @@ public class Trainer {
 			System.out.println("Calculate mean.");
 			// build mean matrix for normalize
 			List<Mat> meanVecList = new Vector<Mat>();
-			for (int i = 0; i < filename.length; i++) {
+			for (int i = 0; i < trainCount; i++) {
 				meanVecList.add(meanVec.clone());
 			}
 			Mat mean = new Mat(trainCount, 32 * 32, meanVec.type());
@@ -86,13 +89,25 @@ public class Trainer {
 					dataChar.cols(), dataChar.type()), 0, L);
 			Mat eigenvalues = new Mat();
 			Mat eigenvectors = new Mat();
-			Core.eigen(L, true, eigenvalues, eigenvectors);
+			//Core.eigen(L, true, eigenvalues, eigenvectors);
+			//System.out.println("eigenvectors "+eigenvectors.dump());
+			//System.out.println("Core.mean"+Core.mean(eigenvectors));
+			Mat testEigen = new Mat();
+			Core.PCACompute(L, Mat.zeros(1, dataChar.cols(), dataChar.type()), eigenvectors);
+			System.out.println("testEigen "+eigenvectors.size());
+			System.out.println("dataChar "+dataChar.size());
+			System.out.println("Core.mean"+Core.mean(eigenvectors));
+			//System.out.println("mean"+mean.dump());
 
 			// find eigen vaector
 			Mat V = new MatOfDouble();
 			Core.gemm(dataChar, eigenvectors, 1.0,
-					Mat.zeros(V.rows(), dataChar.cols(), V.type()), 0, V);
+					Mat.zeros(dataChar.rows(), eigenvectors.cols(), V.type()), 0, V);
 			V = V.t();
+			
+			Mat feature = new MatOfDouble();
+			Core.gemm(V, dataChar, 1.0,
+					Mat.zeros(V.rows(), dataChar.cols(), V.type()), 0, feature);
 			
 			/*
 			 * // build feature vector Mat tr_vectors = new Mat(); Core.gemm(V,
@@ -121,7 +136,7 @@ public class Trainer {
 			Mat response = new MatOfDouble();
 			response = new Mat(trainCount, 1, CvType.CV_32FC1);
 			double[] label = new double[trainCount];
-			for (int i = 0; i < lebelName.length; i++) {
+			for (int i = 0; i < trainCount; i++) {
 				label[i] = Double.parseDouble(lebelName[i]); // must change to
 																// class number
 			}
@@ -129,12 +144,15 @@ public class Trainer {
 
 			System.out.println("Creating feature.");
 			// create feature bin file
-			Model model = new Model(V, meanVec, eigenvectors, response,
+			Model model = new Model(V, meanVec, feature.t(), response,
 					trainCount);
 			model.save(saveModelToFileName);
 			System.out.println("Save model at "+saveModelToFileName);
 
 			// END OF TRAINING
+			timer = new Date();
+			long endTime = timer.getTime();
+			System.out.println("Time "+((endTime-startTime)/1000.0));
 
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -144,7 +162,7 @@ public class Trainer {
 	}
 
 	public static void main(String[] args) {
-		train("sourcedata/CHAR/char_name.txt", "sourcedata/CHAR/label.txt","model.bin");
+		train("trainFileNameList.txt", "trainLabelList.txt","fix.bin");
 		OCR.testClassifier();
 
 	}
