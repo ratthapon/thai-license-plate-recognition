@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 
@@ -23,7 +24,7 @@ import org.opencv.ml.CvKNearest;
 public class OCR {
 
 	private static Model model;
-	private static String modelPath = "400dpi_NB_TN_all.bin";
+	private static String modelPath =  "400dpi_NB_TN_all.bin";
 
 	public static void testClassifier() {
 		//
@@ -81,7 +82,8 @@ public class OCR {
 		System.loadLibrary("opencv_java248");
 		double[] doubleResult = new double[charImageList.size()];
 		model = new Model(modelPath);
-
+		Date timer = new Date();
+		long startTime = timer.getTime();
 		int testCount = 0;
 		Mat sample = new MatOfDouble();
 		Vector<Mat> sampleVector = new Vector<>();
@@ -126,6 +128,9 @@ public class OCR {
 		// knn classify
 		CvKNearest knn = new CvKNearest(eigenvectors, response);
 		knn.find_nearest(testDataEigen, 1, result, new Mat(), new Mat());
+		timer = new Date();
+		long endTime = timer.getTime();
+		System.out.println("Recognize "+testCount+" character "+((endTime-startTime)/1000.0)+" sec.Speed "+(testCount/((endTime-startTime)/1000.0))+" c/s");
 		result.convertTo(result, CvType.CV_64F);
 		System.out.println("result " + result.dump());
 		result.get(0, 0,doubleResult);
