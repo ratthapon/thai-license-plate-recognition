@@ -24,20 +24,26 @@ import org.opencv.ml.CvKNearest;
 public class OCR {
 
 	private static Model model;
-	private static String modelPath =  "400dpi_NB_TN_all.bin";
+	private static String modelPath = "400dpi_NB_TN_all.bin";
 
-	public static void testClassifier() {
+	public static void testClassifier(String fileListName, String modelPath) {
 		//
 		// THIS IS CLASSIFY PHASE
 		//
 		// classify
 		System.loadLibrary("opencv_java248");
-		String fileListName = "trainFileNameList.txt";
+		if (fileListName == null || modelPath.equals("default")) {
+			fileListName = "trainFileNameList.txt";
+		}
+		if (modelPath == null || modelPath.equals("default")) {
+			OCR.modelPath = "400dpi_NB_TN_all.bin";
+			modelPath = "400dpi_NB_TN_all.bin";
+		}
 		FileReader fileReader;
 		BufferedReader bufferedReader;
 		List<String> lines;
 		String line;
-		
+
 		model = new Model(modelPath);
 
 		try {
@@ -51,7 +57,7 @@ public class OCR {
 			bufferedReader.close();
 			String[] filename = lines.toArray(new String[lines.size()]);
 
-			int testCount =0 ;
+			int testCount = 0;
 			List<Mat> charImageList = new ArrayList<>();
 			for (int i = 0; i < filename.length; i++) {
 				Mat img = Highgui.imread(filename[i]);
@@ -65,11 +71,11 @@ public class OCR {
 			model.getResponse().convertTo(mat64f, CvType.CV_64F);
 			mat64f.get(0, 0, buffer);
 			for (int i = 0; i < buffer.length; i++) {
-				expected[i] = (int)buffer[i];
+				expected[i] = (int) buffer[i];
 			}
-			result=recognizeCharImage(charImageList);
-			System.out.println("Acc "+accuracyRate(result, expected));
-			
+			result = recognizeCharImage(charImageList);
+			System.out.println("Acc " + accuracyRate(result, expected));
+
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -87,7 +93,7 @@ public class OCR {
 		int testCount = 0;
 		Mat sample = new MatOfDouble();
 		Vector<Mat> sampleVector = new Vector<>();
-		for (int i = 01; i < charImageList.size(); i++) {
+		for (int i = 0; i < charImageList.size(); i++) {
 			Mat img = charImageList.get(i);
 			Imgproc.cvtColor(img, img, Imgproc.COLOR_RGB2GRAY);
 			Imgproc.resize(img, img, new Size(32, 32));
@@ -130,13 +136,15 @@ public class OCR {
 		knn.find_nearest(testDataEigen, 1, result, new Mat(), new Mat());
 		timer = new Date();
 		long endTime = timer.getTime();
-		System.out.println("Recognize "+testCount+" character "+((endTime-startTime)/1000.0)+" sec.Speed "+(testCount/((endTime-startTime)/1000.0))+" c/s");
+		System.out.println("Recognize " + testCount + " character "
+				+ ((endTime - startTime) / 1000.0) + " sec.Speed "
+				+ (testCount / ((endTime - startTime) / 1000.0)) + " c/s");
 		result.convertTo(result, CvType.CV_64F);
 		System.out.println("result " + result.dump());
-		result.get(0, 0,doubleResult);
+		result.get(0, 0, doubleResult);
 		int[] intResult = new int[doubleResult.length];
 		for (int i = 0; i < intResult.length; i++) {
-			intResult[i] = (int)doubleResult[i];
+			intResult[i] = (int) doubleResult[i];
 		}
 		return intResult;
 	}
@@ -144,10 +152,10 @@ public class OCR {
 	static double accuracyRate(int[] result, int[] expected) {
 		double acc = 0.0;
 		for (int i = 0; i < expected.length; i++) {
-			if (result[i]==expected[i]) {
-				acc+=1;
+			if (result[i] == expected[i]) {
+				acc += 1;
 			}
 		}
-		return acc/result.length*100;
+		return acc / result.length * 100;
 	}
 }

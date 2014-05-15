@@ -25,13 +25,13 @@ import org.opencv.imgproc.Imgproc;
 
 import com.googlecode.javacv.cpp.opencv_core.IplImage;
 
-public class TextSegment extends Imgproc {
+public class TextSegment {
 	private static TextSegment textSegmentObj = null;
 	private static String logtag = ""; // TODO debug var
 	private int plateHeight = 90; // px
 	private int plateWidth = (int) (20.0 / 4.0 * plateHeight); // px
-	//private int charSizeThresh = plateHeight * 1 / 3; // px 1/3 of plat
-														// hieght
+	// private int charSizeThresh = plateHeight * 1 / 3; // px 1/3 of plat
+	// hieght
 	private int structureElementSize = (int) (0.01 * plateHeight);
 	private double calibrate = Math.floor(structureElementSize / 2.0);
 
@@ -75,25 +75,26 @@ public class TextSegment extends Imgproc {
 
 	private List<Mat> segmentText(Mat image) {
 		Mat plateImg = image.clone();
-		resize(plateImg, plateImg, new Size(plateWidth, plateHeight));
+		Imgproc.resize(plateImg, plateImg, new Size(plateWidth, plateHeight));
 
 		// preprocessing image
-		cvtColor(plateImg, plateImg, COLOR_RGB2GRAY);
+		Imgproc.cvtColor(plateImg, plateImg, Imgproc.COLOR_RGB2GRAY);
 		// GaussianBlur(plateImg, plateImg, new Size(3, 3), 3);
-		threshold(plateImg, plateImg, 0, 255, THRESH_OTSU);
-		threshold(plateImg, plateImg, 0, 255, THRESH_BINARY_INV);
-		//Highgui.imwrite("log/" + logtag + "/preprocess.jpg", plateImg);
+		Imgproc.threshold(plateImg, plateImg, 0, 255, Imgproc.THRESH_OTSU);
+		Imgproc.threshold(plateImg, plateImg, 0, 255, Imgproc.THRESH_BINARY_INV);
+		// Highgui.imwrite("log/" + logtag + "/preprocess.jpg", plateImg);
 		Mat preprocessPlate = plateImg.clone();
 
 		// apply some dilation and erosion to join the gaps
 		for (int i = 1; i < structureElementSize; i++) {
-			Mat structureElement = getStructuringElement(MORPH_RECT, new Size(
-					i, 1));
-			dilate(plateImg, plateImg, structureElement);
-			erode(plateImg, plateImg, structureElement);
+			Mat structureElement = Imgproc.getStructuringElement(
+					Imgproc.MORPH_RECT, new Size(i, 1));
+			Imgproc.dilate(plateImg, plateImg, structureElement);
+			Imgproc.erode(plateImg, plateImg, structureElement);
 		}
-		//Highgui.imwrite("log/" + logtag + "/morphological.jpg", plateImg);// TODO
-																			// Log
+		// Highgui.imwrite("log/" + logtag + "/morphological.jpg", plateImg);//
+		// TODO
+		// Log
 
 		// Find the contours
 		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
@@ -101,14 +102,14 @@ public class TextSegment extends Imgproc {
 		List<Rect> boundingRect = new ArrayList<Rect>();
 		List<Rect> candidateRectList = new ArrayList<Rect>();
 		Mat hierarchy = new Mat();
-		findContours(plateImg, contours, hierarchy, RETR_LIST,
-				CHAIN_APPROX_SIMPLE);
-		cvtColor(plateImg, plateImg, COLOR_GRAY2RGBA);
-		//System.out.println("size of contours " + contours.size());// TODO Log
+		Imgproc.findContours(plateImg, contours, hierarchy, Imgproc.RETR_LIST,
+				Imgproc.CHAIN_APPROX_SIMPLE);
+		Imgproc.cvtColor(plateImg, plateImg, Imgproc.COLOR_GRAY2RGBA);
+		// System.out.println("size of contours " + contours.size());// TODO Log
 
 		// create bounding rect for crop
 		for (MatOfPoint matOfPoint : contours) {
-			Rect tempRect = boundingRect(matOfPoint);
+			Rect tempRect = Imgproc.boundingRect(matOfPoint);
 			MatOfPoint tmp = new MatOfPoint(new Point(tempRect.x - calibrate,
 					tempRect.y - calibrate), new Point(tempRect.x
 					+ tempRect.width - calibrate, tempRect.y - calibrate),
@@ -126,17 +127,19 @@ public class TextSegment extends Imgproc {
 					&& tempRect.width < plateHeight * 0.6 * 2;
 			if (rule1 && rule2) {
 				boundingRectPoint.add(tmp);
-				boundingRect.add(boundingRect(tmp));
-				candidateRectList.add(boundingRect(tmp));
+				boundingRect.add(Imgproc.boundingRect(tmp));
+				candidateRectList.add(Imgproc.boundingRect(tmp));
 			}
 		}
 
-		//Mat boudingLog = image.clone();
-		//resize(boudingLog, boudingLog, new Size(plateWidth, plateHeight));
-		//drawContours(boudingLog, boundingRectPoint, -1, new Scalar(0, 255, 0),
-		//		1);
-		//Highgui.imwrite("log/" + logtag + "/contours.jpg", boudingLog);// TODO
-																		// Log
+		// Mat boudingLog = image.clone();
+		// resize(boudingLog, boudingLog, new Size(plateWidth, plateHeight));
+		// drawContours(boudingLog, boundingRectPoint, -1, new Scalar(0, 255,
+		// 0),
+		// 1);
+		// Highgui.imwrite("log/" + logtag + "/contours.jpg", boudingLog);//
+		// TODO
+		// Log
 		// 3. remove all contour that contained by other contour
 		int i = 0;
 		for (Rect inner : candidateRectList) {
@@ -157,9 +160,10 @@ public class TextSegment extends Imgproc {
 		ArrayList<Mat> charImageList = new ArrayList<Mat>();
 		for (Rect rect : boundingRect) {
 			Mat cropImg = (new Mat(preprocessPlate, rect)).clone();
-			threshold(cropImg, cropImg, 127, 255, THRESH_BINARY_INV);
-			resize(cropImg, cropImg, new Size(32, 32));
-			cvtColor(cropImg, cropImg, COLOR_GRAY2RGBA);
+			Imgproc.threshold(cropImg, cropImg, 127, 255,
+					Imgproc.THRESH_BINARY_INV);
+			Imgproc.resize(cropImg, cropImg, new Size(32, 32));
+			Imgproc.cvtColor(cropImg, cropImg, Imgproc.COLOR_GRAY2RGBA);
 			charImageList.add(cropImg);
 		}
 		return charImageList;
@@ -174,7 +178,7 @@ public class TextSegment extends Imgproc {
 
 	private static void testSegment() {
 		System.loadLibrary("opencv_java248");
-	
+
 		// remove old file
 		File folder = new File("segment/");
 		folder.mkdir();
@@ -197,7 +201,7 @@ public class TextSegment extends Imgproc {
 				(new File("log/" + listOfFiles[n].getName())).delete();
 			}
 		}
-	
+
 		List<Mat> charList;
 		folder = new File("sourcedata/LP/");
 		folder.mkdir();
@@ -215,7 +219,7 @@ public class TextSegment extends Imgproc {
 			}
 			bufferedReader.close();
 			String[] fileNames = lines.toArray(new String[lines.size()]);
-	
+
 			fileReader = new FileReader("sourcedata/LP/lebel.txt");
 			bufferedReader = new BufferedReader(fileReader);
 			lines = new ArrayList<String>();

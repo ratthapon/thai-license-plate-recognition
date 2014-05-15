@@ -140,10 +140,4 @@ public class Trainer {
 		}
 	}
 
-	public static void utest() {
-		train("trainFileNameList.txt", "trainLabelList.txt","400dpi_NB_TN_all.bin");
-		OCR.testClassifier();
-
-	}
-
 }
