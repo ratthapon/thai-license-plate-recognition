@@ -39,12 +39,13 @@ public class OCR {
 			OCR.modelPath = "400dpi_NB_TN_all.bin";
 			modelPath = "400dpi_NB_TN_all.bin";
 		}
+		if (model == null) {
+			model = new Model(modelPath);
+		}
 		FileReader fileReader;
 		BufferedReader bufferedReader;
 		List<String> lines;
 		String line;
-
-		model = new Model(modelPath);
 
 		try {
 			fileReader = new FileReader(fileListName);

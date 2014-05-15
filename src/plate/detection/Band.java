@@ -165,7 +165,7 @@ public class Band {
 			Imgproc.approxPolyDP(mop2f, approx,
 					Imgproc.arcLength(mop2f, true) * 0.02, true);
 			Rect tempRect = Imgproc.boundingRect(matOfPoint);
-			Rect newRect = Utils.expandRect(tempRect, 0.00,
+			Rect newRect = Utils.expandRect(tempRect, 0,
 					new Size(grayImage.cols(), grayImage.rows()));
 			boolean rule4 = tempRect.height >= grayImage.rows() / 2;
 			boolean rule5 = approx.rows() == 4;

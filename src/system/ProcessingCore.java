@@ -1,29 +1,24 @@
 package system;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 import ocr.text.recognition.OCR;
 import ocr.text.segmentation.TextSegment;
-import ocr.text.trainer.Trainer;
 
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint;
-import org.opencv.core.Point;
-import org.opencv.core.Scalar;
 import org.opencv.highgui.Highgui;
-import org.opencv.imgproc.Imgproc;
 
-import plate.detection.Band;
 import plate.detection.Car;
 import plate.detection.Plate;
-import utils.Utils;
 
 public class ProcessingCore {
 	public static String logtag = "";
@@ -53,14 +48,13 @@ public class ProcessingCore {
 				logtag = filename[i].split(".j")[0].split(".p")[0];
 				System.out.println(filename[i]);
 
-				// load car image
-				// Car car = new Car(filename[i]);
 				long singleFrameStartTime = (new Date()).getTime();
 				System.out.println(readPlate(Highgui.imread(filename[i])));
 				long singleFrameStopTime = (new Date()).getTime();
-				System.out.println("Fram process time "
-						+ ((singleFrameStopTime - singleFrameStartTime) / 1000.0)
-						+ " sec.\n");
+				System.out
+						.println("Fram process time "
+								+ ((singleFrameStopTime - singleFrameStartTime) / 1000.0)
+								+ " sec.\n");
 				testCount++;
 				// // detect all plate
 				// List<Plate> plates = new ArrayList<Plate>();
@@ -161,7 +155,7 @@ public class ProcessingCore {
 		}
 	}
 
-	private static String readPlate(Mat carMat) {
+	private static List<String> readPlate(Mat carMat) {
 		// load car image
 		System.loadLibrary("opencv_java248");
 		Car car = new Car(carMat);
@@ -174,24 +168,31 @@ public class ProcessingCore {
 				+ ((detectPlateStopTime - detectPlateStartTime) / 1000.0)
 				+ " sec.");
 		String result = "";
+		List<String> resultArray = new ArrayList<>();
+		List<Mat> charMatList;
 		for (Plate plate : plates) {
-			List<Mat> charMatList = new ArrayList<Mat>();
+			long recogCharStartTime = (new Date()).getTime();
+			charMatList = new ArrayList<Mat>();
 			charMatList = TextSegment.getListMatOfCharImage(plate.toMat());
+			long recogCharStopTime = (new Date()).getTime();
+			System.out.println("Characters detect and recognize "
+					+ ((recogCharStopTime - recogCharStartTime) / 1000.0)
+					+ " sec.");
 			if (charMatList.size() <= 0) {
 				continue;
 			}
 			int[] charCode = OCR.recognizeCharImage(charMatList);
-			System.out.println("mat list size "+charMatList.size()+" code size "+charCode.length);
-			System.out.print("OUTPUT ");
 			for (int i = 0; i < charCode.length; i++) {
-				System.out.printf(" %c ", charCode[i]);
-				result = result + String.format("%c", charCode[i]);
+				int c = charCode[i];
+				if (charCode[i] >= 161) {
+					c = 0x0e00 + (charCode[i] - 160);
+				}
+				result = result + String.format("%c", c);
 			}
-			result = result + "\n";
-
+			resultArray.add(result);
+			result = new String("");
 		}
-		System.out.println();
-		return result;
+		return resultArray;
 	}
 
 	public static void main(String[] args) {
