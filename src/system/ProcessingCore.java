@@ -162,7 +162,7 @@ public class ProcessingCore {
 		// detect all plate
 		long detectPlateStartTime = (new Date()).getTime();
 		List<Plate> plates = new ArrayList<Plate>();
-		plates = car.clipPlatesMaxBandLimit(7);
+		plates = car.clipPlatesMaxBandLimit(3);
 		long detectPlateStopTime = (new Date()).getTime();
 		System.out.println("Detect plates "
 				+ ((detectPlateStopTime - detectPlateStartTime) / 1000.0)
