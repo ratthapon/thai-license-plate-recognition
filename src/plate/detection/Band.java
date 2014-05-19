@@ -77,26 +77,37 @@ public class Band {
 		return clipPlates.subList(0, maxPlate);
 	}
 
+	public List<Plate> clipPlates2(Mat carImage) {
+		System.out.println("Plates clipping");
+		List<Plate> clipPlates = new ArrayList<Plate>();
+		Plate plate = clipPlate2(carImage);
+		clipPlates.add(plate);
+
+		// sort band by heuristic
+		//Collections.sort(clipPlates, Plate.PLATE_HUERISTIC_CAMPATATOR);
+		// System.out.println("Clipped " + clipBands.size() + " bands");
+		return clipPlates;
+	}
+
 	// unfinish
-	private List<Plate> clipPlate2(Mat carImage) {
-		List<Plate> plate;
+	public Plate clipPlate2(Mat carImage) {
+		Plate plate;
 		// System.out.println("Project band image in X axis");
 		Vector<Byte> pxMagnitude = Utils.projectMatX(Utils
 				.verticalLine(bandMat));
 		byte xpm = Collections.max(pxMagnitude);
 		int xpmIndex = pxMagnitude.indexOf(xpm);
-		double c1 = (Collections.max(pxMagnitude) + Collections
-				.min(pxMagnitude)) * 0.86;
-		double c2 = (Collections.max(pxMagnitude) + Collections
-				.min(pxMagnitude)) * 0.86;
+		double c1 = Collections.max(pxMagnitude) * 0.5;
+		double c2 = Collections.max(pxMagnitude) * 0.5;
 		// yb0 = max(y0<=y<=ybm){y|py(y)<=c*py(ybm)}
 		Vector<Byte> xp0InspectSet = new Vector<Byte>(pxMagnitude.subList(0,
 				xpmIndex));
 		int xp0Index = 0;
 		for (int i = 0; i < xp0InspectSet.size(); i++) {
 			Byte byte1 = xp0InspectSet.get(i);
-			if (byte1 <= c1) {
+			if (byte1 >= c1) {
 				xp0Index = i;
+				break;
 			}
 		}
 
@@ -106,13 +117,12 @@ public class Band {
 		int xp1Index = pxMagnitude.size() - 1;
 		for (int i = 0; i < xp1InspectSet.size(); i++) {
 			Byte byte1 = xp1InspectSet.get(i);
-			if (byte1 <= c2) {
+			if (byte1 >= c2) {
 				xp1Index = i + xpmIndex;
-				break;
 			}
 		}
 
-		System.out.println("Calibrate band coordinate");
+		// System.out.println("Calibrate band coordinate");
 
 		int calibrate = (int) ((xp1Index - xp0Index) * 0.1);
 		xp0Index -= calibrate;
@@ -120,10 +130,12 @@ public class Band {
 		if (xp0Index < 0) {
 			xp0Index = 0;
 		}
-		if (xp1Index > bandMat.cols() - 1) {
-			xp1Index = bandMat.cols() - 1;
+		if (xp1Index > carImage.cols() - 1) {
+			xp1Index = carImage.cols() - 1;
 		}
-		return null;
+		plate = new Plate(carImage, new Rect(xp0Index, top,
+				xp1Index - xp0Index, height), 0.0);
+		return plate;
 	}
 
 	public List<Plate> clipPlates(Mat carImage) {
@@ -144,10 +156,10 @@ public class Band {
 		Imgproc.dilate(grayImage, grayImage, structureElementKernel);
 		Mat morpho = grayImage.clone();
 
-		//Highgui.imwrite("platelocalize/" + system.ProcessingCore.logtag
-		//		+ "_BAND_MORPH.jpg", grayImage);
-		//Highgui.imwrite("platelocalize/" + system.ProcessingCore.logtag
-		//		+ "_BAND_CLIPPED.jpg", this.toMat());
+		// Highgui.imwrite("platelocalize/" + system.ProcessingCore.logtag
+		// + "_BAND_MORPH.jpg", grayImage);
+		// Highgui.imwrite("platelocalize/" + system.ProcessingCore.logtag
+		// + "_BAND_CLIPPED.jpg", this.toMat());
 
 		// Find the contours
 		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();

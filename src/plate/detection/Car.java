@@ -2,8 +2,12 @@ package plate.detection;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Vector;
+
+import ocr.text.recognition.OCR;
+import ocr.text.segmentation.TextSegment;
 
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
@@ -35,7 +39,7 @@ public class Car {
 		Mat image = Utils.verticalLine(carImage);
 		for (int i = 0; i < maxCandidate; i++) {
 			Band band = clipBand(image);
-			if (band.height <= 1) {
+			if (band.height <= carImage.height()*0.05) {
 				break;
 			}
 			Mat zeros = Mat.zeros(band.height, band.width, image.type());
@@ -61,9 +65,9 @@ public class Car {
 		byte ybm = Collections.max(pyMagnitude);
 		int ybmIndex = pyMagnitude.indexOf(ybm);
 		double c1 = (Collections.max(pyMagnitude) + Collections
-				.min(pyMagnitude)) * 0.55;
+				.min(pyMagnitude)) * 0.5;
 		double c2 = (Collections.max(pyMagnitude) + Collections
-				.min(pyMagnitude)) * 0.42;
+				.min(pyMagnitude)) * 0.5;
 		// yb0 = max(y0<=y<=ybm){y|py(y)<=c*py(ybm)}
 		Vector<Byte> yb0InspectSet = new Vector<Byte>(pyMagnitude.subList(0,
 				ybmIndex));
@@ -89,7 +93,7 @@ public class Car {
 
 		// System.out.println("Calibrate band coordinate");
 
-		int calibrate = (int) ((yb1Index - yb0Index) * 0.1);
+		int calibrate = (int) ((yb1Index - yb0Index) * 0.2);
 		yb0Index -= calibrate;
 		yb1Index += calibrate;
 		if (yb0Index < 0) {
@@ -125,6 +129,43 @@ public class Car {
 			plates.addAll(band.clipPlates(this.toMat(), maxPlate));
 		}
 		return plates;
+	}
+
+	public List<String> readPlate() {
+		// detect all plate
+		long detectPlateStartTime = (new Date()).getTime();
+		List<Plate> plates = new ArrayList<Plate>();
+		plates = this.clipPlatesMaxBandLimit(3);
+		long detectPlateStopTime = (new Date()).getTime();
+		System.out.println("Detect plates "
+				+ ((detectPlateStopTime - detectPlateStartTime) / 1000.0)
+				+ " sec.");
+		String result = "";
+		List<String> resultArray = new ArrayList<>();
+		List<Mat> charMatList;
+		for (Plate plate : plates) {
+			long recogCharStartTime = (new Date()).getTime();
+			charMatList = new ArrayList<Mat>();
+			charMatList = TextSegment.getListMatOfCharImage(plate.toMat());
+			long recogCharStopTime = (new Date()).getTime();
+			System.out.println("Characters detect and recognize "
+					+ ((recogCharStopTime - recogCharStartTime) / 1000.0)
+					+ " sec.");
+			if (charMatList.size() <= 0) {
+				continue;
+			}
+			int[] charCode = OCR.recognizeCharImage(charMatList);
+			for (int i = 0; i < charCode.length; i++) {
+				int c = charCode[i];
+				if (charCode[i] >= 161) {
+					c = 0x0e00 + (charCode[i] - 160);
+				}
+				result = result + String.format("%c", c);
+			}
+			resultArray.add(result);
+			result = new String("");
+		}
+		return resultArray;
 	}
 
 	public Mat toMat() {

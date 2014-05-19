@@ -24,7 +24,7 @@ import org.opencv.ml.CvKNearest;
 public class OCR {
 
 	private static Model model;
-	private static String modelPath = "400dpi_NB_TN_all.bin";
+	private static String modelPath = "400dpi_NB_TN_1500.bin";
 
 	public static void testClassifier(String fileListName, String modelPath) {
 		//
@@ -86,9 +86,11 @@ public class OCR {
 	}
 
 	public static int[] recognizeCharImage(List<Mat> charImageList) {
-		System.loadLibrary("opencv_java248");
+		//System.loadLibrary("opencv_java248");
 		double[] doubleResult = new double[charImageList.size()];
-		model = new Model(modelPath);
+		if (model == null) {
+			model = new Model(modelPath);
+		}
 		Date timer = new Date();
 		long startTime = timer.getTime();
 		int testCount = 0;

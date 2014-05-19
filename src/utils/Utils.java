@@ -14,6 +14,8 @@ import org.opencv.core.Size;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
+import plate.detection.Plate;
+
 public class Utils {
 	public static int scale = 1;
 	public static int delta = 0;
@@ -48,7 +50,7 @@ public class Utils {
 		Vector<Byte> result = new Vector<Byte>(image.cols());
 		for (int i = 0; i < image.cols(); i++) {
 			result.add(i,
-					(byte) (Core.sumElems(image.col(i)).val[0] / image.rows()));
+					(byte) (Core.sumElems(image.col(i)).val[0]  / image.rows()));
 		}
 		return result;
 	}
@@ -67,6 +69,15 @@ public class Utils {
 			pDifXperH.add(i, (byte) ((px.get(i) - pXsubH.get(i)) / H));
 		}
 		return pDifXperH;
+	}
+
+	public static MatOfPoint rectToMatOfPoint(Rect srcRect) {
+		Point p1 = new Point(srcRect.x, srcRect.y);
+		Point p2 = new Point(srcRect.x + srcRect.width, srcRect.y);
+		Point p3 = new Point(srcRect.x + srcRect.width, srcRect.y
+				+ srcRect.height);
+		Point p4 = new Point(srcRect.x, srcRect.y + srcRect.height);
+		return new MatOfPoint(p1, p2, p3, p4);
 	}
 
 	public static Rect expandRect(Rect rect, double expandRatio, Size sizeBound) {
@@ -160,5 +171,29 @@ public class Utils {
 					127, 127), 1);
 		}
 		return graph;
+	}
+
+	public static Mat drawBoundingRect(Mat carImage, List<Plate> plates) {
+		// show bounding rect
+		Mat showBounding = new Mat(carImage.rows(), carImage.cols(),
+				carImage.type());
+		showBounding.push_back(carImage.clone());
+		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+
+		for (Plate plate : plates) {
+			Point p1 = new Point(plate.getBoundingRect().x,
+					plate.getBoundingRect().y);
+			Point p2 = new Point(plate.getBoundingRect().x
+					+ plate.getBoundingRect().width, plate.getBoundingRect().y);
+			Point p3 = new Point(plate.getBoundingRect().x
+					+ plate.getBoundingRect().width, plate.getBoundingRect().y
+					+ plate.getBoundingRect().height);
+			Point p4 = new Point(plate.getBoundingRect().x,
+					plate.getBoundingRect().y + plate.getBoundingRect().height);
+			contours.add(new MatOfPoint(p1, p2, p3, p4));
+		}
+		Imgproc.drawContours(showBounding, contours, -1, new Scalar(0, 255, 0),
+				3);
+		return showBounding;
 	}
 }
