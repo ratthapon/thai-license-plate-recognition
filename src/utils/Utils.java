@@ -19,6 +19,11 @@ import plate.detection.Plate;
 public class Utils {
 	public static int scale = 1;
 	public static int delta = 0;
+	
+	public static List<StringFrequencyList> stringFrequency(){
+		
+		return null;
+	}
 
 	public static Mat verticalLine(Mat image) {
 		System.loadLibrary("opencv_java248");
@@ -164,11 +169,11 @@ public class Utils {
 		horizontalGraph.add(mopHG);
 		if (drawHorizontal) {
 			Imgproc.drawContours(graph, verticalGraph, -1, new Scalar(0, 0, 0),
-					1);
+					3);
 		}
 		if (drawVertical) {
 			Imgproc.drawContours(graph, horizontalGraph, -1, new Scalar(127,
-					127, 127), 1);
+					127, 127), 3);
 		}
 		return graph;
 	}

@@ -22,9 +22,14 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.ml.CvKNearest;
 
 public class OCR {
+	private static OCR ocrInstance = null;
 
 	private static Model model;
 	private static String modelPath = "400dpi_NB_TN_1500.bin";
+	
+	private OCR(){
+		System.loadLibrary("opencv_java248");
+	}
 
 	public static void testClassifier(String fileListName, String modelPath) {
 		//
@@ -86,11 +91,13 @@ public class OCR {
 	}
 
 	public static int[] recognizeCharImage(List<Mat> charImageList) {
-		//System.loadLibrary("opencv_java248");
-		double[] doubleResult = new double[charImageList.size()];
+		if (ocrInstance == null) {
+			ocrInstance = new OCR();
+		}
 		if (model == null) {
 			model = new Model(modelPath);
 		}
+		double[] doubleResult = new double[charImageList.size()];
 		Date timer = new Date();
 		long startTime = timer.getTime();
 		int testCount = 0;

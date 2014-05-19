@@ -39,7 +39,7 @@ public class Car {
 		Mat image = Utils.verticalLine(carImage);
 		for (int i = 0; i < maxCandidate; i++) {
 			Band band = clipBand(image);
-			if (band.height <= carImage.height()*0.05) {
+			if (band.height <= carImage.height()*0.1) {
 				break;
 			}
 			Mat zeros = Mat.zeros(band.height, band.width, image.type());

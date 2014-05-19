@@ -97,8 +97,8 @@ public class Band {
 				.verticalLine(bandMat));
 		byte xpm = Collections.max(pxMagnitude);
 		int xpmIndex = pxMagnitude.indexOf(xpm);
-		double c1 = Collections.max(pxMagnitude) * 0.5;
-		double c2 = Collections.max(pxMagnitude) * 0.5;
+		double c1 = Collections.max(pxMagnitude) * 0.15;
+		double c2 = Collections.max(pxMagnitude) * 0.15;
 		// yb0 = max(y0<=y<=ybm){y|py(y)<=c*py(ybm)}
 		Vector<Byte> xp0InspectSet = new Vector<Byte>(pxMagnitude.subList(0,
 				xpmIndex));
@@ -124,7 +124,7 @@ public class Band {
 
 		// System.out.println("Calibrate band coordinate");
 
-		int calibrate = (int) ((xp1Index - xp0Index) * 0.1);
+		int calibrate = (int) ((xp1Index - xp0Index) * 0.2);
 		xp0Index -= calibrate;
 		xp1Index += calibrate;
 		if (xp0Index < 0) {

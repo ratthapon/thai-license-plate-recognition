@@ -30,8 +30,6 @@ public class TextSegment {
 	private static String logtag = ""; // TODO debug var
 	private int plateHeight = 90; // px
 	private int plateWidth = (int) (20.0 / 4.0 * plateHeight); // px
-	// private int charSizeThresh = plateHeight * 1 / 3; // px 1/3 of plat
-	// hieght
 	private int structureElementSize = (int) (0.01 * plateHeight);
 	private double calibrate = Math.floor(structureElementSize / 2.0);
 
@@ -75,6 +73,10 @@ public class TextSegment {
 
 	private List<Mat> segmentText(Mat image) {
 		Mat plateImg = image.clone();
+		plateWidth = image.width();
+		plateHeight = (int) (plateWidth / image.cols()* image.rows());
+		structureElementSize = (int) (0.01 * plateHeight);
+		calibrate = Math.floor(structureElementSize / 2.0);
 		Imgproc.resize(plateImg, plateImg, new Size(plateWidth, plateHeight));
 
 		// preprocessing image
@@ -98,8 +100,8 @@ public class TextSegment {
 
 		// Find the contours
 		List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-		List<MatOfPoint> boundingRectPoint = new ArrayList<MatOfPoint>();
-		List<Rect> boundingRect = new ArrayList<Rect>();
+		boundingRectPoint = new ArrayList<MatOfPoint>();
+		boundingRect = new ArrayList<Rect>();
 		List<Rect> candidateRectList = new ArrayList<Rect>();
 		Mat hierarchy = new Mat();
 		Imgproc.findContours(plateImg, contours, hierarchy, Imgproc.RETR_LIST,
@@ -121,7 +123,7 @@ public class TextSegment {
 			// determine char candidate using criteria
 			// 1. char h must relate to charSizeThresh
 			boolean rule1 = tempRect.height > plateHeight * 0.55
-					&& tempRect.height < plateHeight * 0.95;
+					&& tempRect.height < plateHeight * 0.9;
 			// 2. char size must relate to ratio of w and h of it self
 			boolean rule2 = tempRect.width > plateHeight * 0.6 * 1 / 3
 					&& tempRect.width < plateHeight * 0.6 * 2;
@@ -169,12 +171,22 @@ public class TextSegment {
 		return charImageList;
 	}
 
+	public static List<MatOfPoint> getBoundingRectPoint() {
+		return textSegmentObj.boundingRectPoint;
+	}
+
+	public static List<Rect> getBoundingRect() {
+		return textSegmentObj.boundingRect;
+	}
+
 	// for sort character in plate
 	static Comparator<Rect> horizontalOrderComparator = new Comparator<Rect>() {
 		public int compare(Rect c1, Rect c2) {
 			return c1.x - c2.x;
 		}
 	};
+	private List<Rect> boundingRect;
+	private List<MatOfPoint> boundingRectPoint;
 
 	private static void testSegment() {
 		System.loadLibrary("opencv_java248");

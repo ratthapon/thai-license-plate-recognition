@@ -15,6 +15,8 @@ import javax.swing.JTextPane;
 import javax.swing.SwingConstants;
 import javax.swing.border.LineBorder;
 
+import org.opencv.highgui.Highgui;
+
 import system.ProcessingCore;
 
 public class MyWindowsForm {
@@ -25,6 +27,9 @@ public class MyWindowsForm {
 	public static JLabel lblTime;
 	public static JLabel lblDate;
 	public static JLabel lblInformation;
+	public static JButton captureBtn;
+	
+	private int banNum = 0;
 
 	/**
 	 * Launch the application.
@@ -109,15 +114,15 @@ public class MyWindowsForm {
 		lblInformation.setBounds(743, 190, 184, 27);
 		frame.getContentPane().add(lblInformation);
 		
-		JButton btnNewButton = 	new JButton("New button");
-		btnNewButton.setFont(new Font("Tahoma", Font.PLAIN, 14));
-		btnNewButton.addActionListener(new ActionListener() {
+		captureBtn = new JButton("New button");
+		captureBtn.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		captureBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				System.out.print("Ahh yesss! ");
+				Highgui.imwrite("C:/Project/LPR/RES/band/"+(banNum++)+".jpg", ProcessingCore.captureBand.toMat());
 			}
 		});
-		btnNewButton.setBounds(755, 589, 155, 50);
-		frame.getContentPane().add(btnNewButton);
+		captureBtn.setBounds(755, 589, 155, 50);
+		frame.getContentPane().add(captureBtn);
 		
 		JTextPane textPane = new JTextPane();
 		textPane.setFont(new Font("Tahoma", Font.PLAIN, 36));
