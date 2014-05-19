@@ -11,7 +11,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -33,6 +32,7 @@ import org.opencv.imgproc.Imgproc;
 import plate.detection.Band;
 import plate.detection.Car;
 import plate.detection.Plate;
+import utils.StringFrequency;
 import utils.Utils;
 
 public class ProcessingCore {
@@ -46,11 +46,20 @@ public class ProcessingCore {
 
 	private static int maxBandLimit = 1;
 	private static boolean useWebCam = true;
+	private boolean debugMode = false;
+
+	public void setDebugMode(boolean debugMode) {
+		this.debugMode = debugMode;
+	}
+
 	private static JLabel showLabel = null;
-	final int processFrameRate = 10; // fps
+	private final int processFrameRate = 150; // fps
+	private long startTime = 1;
+	private long endTime = 1;
+
 	TimerTask task = null;
 	Timer timer = new Timer();
-	
+
 	public static Band captureBand = null; // debug
 
 	public ProcessingCore() {
@@ -79,6 +88,9 @@ public class ProcessingCore {
 		ProcessingCore.showLabel = showLabel;
 		task = new TimerTask() {
 
+			private StringFrequency resultFrequency = new StringFrequency();
+			private int evaluationRate = 30; // time per sec
+
 			@Override
 			public void run() {
 				System.out.println("Running.Mode show image.");
@@ -89,15 +101,37 @@ public class ProcessingCore {
 						List<Band> bands = new ArrayList<>();
 						bands = car.clipBands(maxBandLimit);
 						List<Plate> plates = new ArrayList<Plate>();
-						List<String> resultArray = new ArrayList<>();
+						if (System.currentTimeMillis()
+								% (1000 / evaluationRate) == 0) {
+							String outString = resultFrequency
+									.getMaxGreaterThan(30);
+							if (outString.equalsIgnoreCase("") != true) {
+								if (debugMode) {
+									WindowDebug.text1.setText(outString);
+								} else {
+									MyWindowsForm.label_1.setText(outString);
+								}
+								System.out.println(outString);
+								resultFrequency = new StringFrequency();
+							}
+						}
+						if (System.nanoTime() % 3000 <= 10) {
+							String outString = resultFrequency
+									.getMaxGreaterThan(30);
+							if (outString.equalsIgnoreCase("")) {
+								resultFrequency = new StringFrequency();
+							}
+						}
 						List<Mat> charMatList;
 						List<MatOfPoint> bandContours = new ArrayList<MatOfPoint>();
 						List<MatOfPoint> plateContours = new ArrayList<MatOfPoint>();
 						for (Band band : bands) {
-							captureBand = band;
 							plates.add(band.clipPlate2(car.toMat()));
-							bandContours.add(Utils.rectToMatOfPoint(band
-									.getBoundingRect()));
+							if (debugMode) {
+								captureBand = band;
+								bandContours.add(Utils.rectToMatOfPoint(band
+										.getBoundingRect()));
+							}
 						}
 						String result = "";
 						for (Plate plate : plates) {
@@ -116,47 +150,73 @@ public class ProcessingCore {
 								}
 								result = result + String.format("%c", c);
 							}
-							resultArray.add(result);
+							resultFrequency.push(result);
 							result = new String("");
 							plateContours.add(Utils.rectToMatOfPoint(plate
 									.getBoundingRect()));
-						}
-						if (resultArray.size() >= 1) {
-							WindowDebug.text1.setText(resultArray
-									.toString());
-							System.out.println(resultArray);
 						}
 						Mat boundingRect = car.toMat();
 						Imgproc.drawContours(boundingRect, bandContours, -1,
 								new Scalar(0, 255, 0), 3);
 						Imgproc.drawContours(boundingRect, plateContours, -1,
 								new Scalar(255, 0, 0), 2);
-						Imgproc.resize(boundingRect, boundingRect, new Size(400, 300));
-						BufferedImage temp = Panel.matToBufferedImage(boundingRect);
-						//BufferedImage temp = Panel.matToBufferedImage(Utils.histoGraph(Utils.verticalLine(bands.get(0).toMat()), true, true));
+						Imgproc.resize(boundingRect, boundingRect, new Size(
+								ProcessingCore.showLabel.getWidth(), (int) (ProcessingCore.showLabel.getWidth() / ProcessingCore.showLabel.getWidth() * ProcessingCore.showLabel.getHeight())));
+						BufferedImage temp = Panel
+								.matToBufferedImage(boundingRect);
+						// BufferedImage temp =
+						// Panel.matToBufferedImage(Utils.histoGraph(Utils.verticalLine(bands.get(0).toMat()),
+						// true, true));
 						ProcessingCore.showLabel.setIcon(new ImageIcon(temp));
-						
+
 						// show bug session
-						if (captureBand !=null) {
-							Mat debugBand = Utils.histoGraph(Utils.verticalLine(captureBand.toMat()), true, true);
-							Imgproc.resize(debugBand, debugBand, new Size(400, (int) (400.0 / debugBand.cols()* debugBand.rows())));
-							BufferedImage band = Panel.matToBufferedImage(debugBand);
-							WindowDebug.showImage2.setIcon(new ImageIcon(band));
+						if (debugMode) {
+							if (captureBand != null) {
+								Mat debugBand = Utils
+										.histoGraph(Utils
+												.verticalLine(captureBand
+														.toMat()), true, true);
+								Imgproc.resize(
+										debugBand,
+										debugBand,
+										new Size(400, (int) (400.0 / debugBand
+												.cols() * debugBand.rows())));
+								BufferedImage band = Panel
+										.matToBufferedImage(debugBand);
+								WindowDebug.showImage2.setIcon(new ImageIcon(
+										band));
+							}
+							Mat debugHist = Utils.verticalLine(car.toMat());
+							Imgproc.resize(
+									debugHist,
+									debugHist,
+									new Size(400, (int) (400.0 / debugHist
+											.cols() * debugHist.rows())));
+							BufferedImage debugHistBuffer = Panel
+									.matToBufferedImage(debugHist);
+							WindowDebug.showImage3.setIcon(new ImageIcon(
+									debugHistBuffer));
+
+							if (plates.size() >= 1) {
+								Mat debugBand = plates.get(0).toMat();
+								Imgproc.drawContours(debugBand,
+										TextSegment.getBoundingRectPoint(), -1,
+										new Scalar(0, 0, 255), 2);
+								Imgproc.resize(
+										debugBand,
+										debugBand,
+										new Size(400, (int) (400.0 / debugBand
+												.cols() * debugBand.rows())));
+								BufferedImage band = Panel
+										.matToBufferedImage(debugBand);
+								WindowDebug.showImage4.setIcon(new ImageIcon(
+										band));
+								endTime = System.currentTimeMillis();
+								WindowDebug.textField_1.setText("REAL FPS : "
+										+ (1000 / (endTime - startTime)));
+								startTime = endTime;
+							}
 						}
-						Mat debugHist = Utils.verticalLine(car.toMat());
-						Imgproc.resize(debugHist, debugHist, new Size(400, (int) (400.0 / debugHist.cols()* debugHist.rows())));
-						BufferedImage debugHistBuffer = Panel.matToBufferedImage(debugHist);
-						WindowDebug.showImage3.setIcon(new ImageIcon(debugHistBuffer));
-						
-						if (plates.size() >= 1) {
-							Mat debugBand = plates.get(0).toMat();
-							Imgproc.drawContours(debugBand, TextSegment.getBoundingRectPoint(), -1,
-									new Scalar(0, 0, 255), 2);
-							Imgproc.resize(debugBand, debugBand, new Size(400, (int) (400.0 / debugBand.cols()* debugBand.rows())));
-							BufferedImage band = Panel.matToBufferedImage(debugBand);
-							WindowDebug.showImage4.setIcon(new ImageIcon(band));
-						}
-						
 					}
 				}
 			}

@@ -15,7 +15,7 @@ public class WindowDebug {
 
 	private JFrame frame;
 	public static JTextField text1;
-	private JTextField textField_1;
+	public static JTextField textField_1;
 	private JTextField textField_2;
 	private JTextField textField_3;
 	private JTextField textField_4;
@@ -51,7 +51,10 @@ public class WindowDebug {
 	public WindowDebug() {
 		initialize();
 		ProcessingCore core = new ProcessingCore(showImage1, true);
+		core.setDebugMode(true);
 		core.start();
+		textField_5.grabFocus();
+		
 	}
 
 	/**

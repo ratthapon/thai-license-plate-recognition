@@ -19,11 +19,6 @@ import plate.detection.Plate;
 public class Utils {
 	public static int scale = 1;
 	public static int delta = 0;
-	
-	public static List<StringFrequencyList> stringFrequency(){
-		
-		return null;
-	}
 
 	public static Mat verticalLine(Mat image) {
 		System.loadLibrary("opencv_java248");

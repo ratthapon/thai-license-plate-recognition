@@ -125,7 +125,7 @@ public class TextSegment {
 			boolean rule1 = tempRect.height > plateHeight * 0.55
 					&& tempRect.height < plateHeight * 0.9;
 			// 2. char size must relate to ratio of w and h of it self
-			boolean rule2 = tempRect.width > plateHeight * 0.6 * 1 / 3
+			boolean rule2 = tempRect.width > plateHeight * 0.6 * 1 / 4
 					&& tempRect.width < plateHeight * 0.6 * 2;
 			if (rule1 && rule2) {
 				boundingRectPoint.add(tmp);
