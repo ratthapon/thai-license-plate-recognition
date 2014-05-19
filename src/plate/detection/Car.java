@@ -65,9 +65,9 @@ public class Car {
 		byte ybm = Collections.max(pyMagnitude);
 		int ybmIndex = pyMagnitude.indexOf(ybm);
 		double c1 = (Collections.max(pyMagnitude) + Collections
-				.min(pyMagnitude)) * 0.6;
+				.min(pyMagnitude)) * 0.5;
 		double c2 = (Collections.max(pyMagnitude) + Collections
-				.min(pyMagnitude)) * 0.6;
+				.min(pyMagnitude)) * 0.5;
 		// yb0 = max(y0<=y<=ybm){y|py(y)<=c*py(ybm)}
 		Vector<Byte> yb0InspectSet = new Vector<Byte>(pyMagnitude.subList(0,
 				ybmIndex));

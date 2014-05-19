@@ -56,8 +56,8 @@ public class MyWindowsForm {
 	 */
 	public MyWindowsForm() {
 			initialize();
-			ProcessingCore core = new ProcessingCore(showImage,true);
-			core.start();
+			//ProcessingCore core = new ProcessingCore(showImage,true);
+			//core.start();
 			Thread tim = new TestTime();
 			tim.start();
 			Thread dat = new TestDate();
