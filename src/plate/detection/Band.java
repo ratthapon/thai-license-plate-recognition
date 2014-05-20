@@ -80,10 +80,12 @@ public class Band {
 		System.out.println("Plates clipping");
 		List<Plate> clipPlates = new ArrayList<Plate>();
 		Plate plate = clipPlate2(carImage);
+		if (plate.width <= carImage.width() * 0.1) {
+			return clipPlates;
+		}
 		clipPlates.add(plate);
-
 		// sort band by heuristic
-		//Collections.sort(clipPlates, Plate.PLATE_HUERISTIC_CAMPATATOR);
+		// Collections.sort(clipPlates, Plate.PLATE_HUERISTIC_CAMPATATOR);
 		// System.out.println("Clipped " + clipBands.size() + " bands");
 		return clipPlates;
 	}
@@ -97,14 +99,14 @@ public class Band {
 		byte xpm = Collections.max(pxMagnitude);
 		int xpmIndex = pxMagnitude.indexOf(xpm);
 		double c1 = Collections.max(pxMagnitude) * 0.15;
-		double c2 = Collections.max(pxMagnitude) * 0.15;
+		double c2 = Collections.max(pxMagnitude) * 0.9;
 		// yb0 = max(y0<=y<=ybm){y|py(y)<=c*py(ybm)}
 		Vector<Byte> xp0InspectSet = new Vector<Byte>(pxMagnitude.subList(0,
 				xpmIndex));
 		int xp0Index = 0;
 		for (int i = 0; i < xp0InspectSet.size(); i++) {
 			Byte byte1 = xp0InspectSet.get(i);
-			if (byte1 >= c1) {
+			if (byte1 >= c1 && byte1 <= c2) {
 				xp0Index = i;
 				break;
 			}
@@ -116,7 +118,7 @@ public class Band {
 		int xp1Index = pxMagnitude.size() - 1;
 		for (int i = 0; i < xp1InspectSet.size(); i++) {
 			Byte byte1 = xp1InspectSet.get(i);
-			if (byte1 >= c2) {
+			if (byte1 >= c1 && byte1 <= c2) {
 				xp1Index = i + xpmIndex;
 			}
 		}

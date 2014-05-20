@@ -1,6 +1,5 @@
 package system;
 
-import input.video.MyWindowsForm;
 import input.video.Panel;
 import input.video.WindowDebug;
 
@@ -37,8 +36,6 @@ import utils.StringFrequency;
 import utils.Utils;
 
 public class ProcessingCore {
-	private static ProcessingCore core = null;
-
 	public static String logtag = "";
 	private static int testCount = 0;
 	private static int foundCount = 0;
@@ -46,17 +43,22 @@ public class ProcessingCore {
 	private static int isPlateCount = 0;
 
 	private static int maxBandLimit = 1;
-	private static boolean useWebCam = true;
 	private boolean debugMode = false;
 
 	public void setDebugMode(boolean debugMode) {
 		this.debugMode = debugMode;
 	}
 
+	private static String filePath = null;
+
+	public static void setFilePath(String filePath) {
+		ProcessingCore.filePath = filePath;
+	}
+
 	private static JLabel showLabel = null;
 	private static JLabel showPlate = null;
 	private static JTextField showOutputText = null;
-	private final int processFrameRate = 150; // fps
+	private final int processFrameRate = 30; // fps
 	private long startTime = 1;
 	private long endTime = 1;
 
@@ -89,14 +91,24 @@ public class ProcessingCore {
 			boolean webCamMode) {
 		System.loadLibrary("opencv_java248");
 		final Mat srcImage = new Mat();
-		final VideoCapture capture = new VideoCapture(0);
+		final VideoCapture capture;
+		if (webCamMode) {
+			capture = new VideoCapture(0);
+		} else {
+			if (filePath != null) {
+				capture = new VideoCapture(filePath);
+			} else {
+				return;
+			}
+		}
 		ProcessingCore.showLabel = showFullInputImageLabel;
 		ProcessingCore.showPlate = showPlateOutputImageLabel;
 		ProcessingCore.showOutputText = outputTextField;
 		task = new TimerTask() {
 
 			private StringFrequency resultFrequency = new StringFrequency();
-			private int evaluationRate = 30; // time per sec
+			private double evaluationRate = 0.9; // time per sec
+			private int recognizedTime = 0;
 
 			@Override
 			public void run() {
@@ -108,10 +120,12 @@ public class ProcessingCore {
 						List<Band> bands = new ArrayList<>();
 						bands = car.clipBands(maxBandLimit);
 						List<Plate> plates = new ArrayList<Plate>();
-						if (System.currentTimeMillis()
-								% (1000 / evaluationRate) == 0) {
+						recognizedTime++;
+						if (recognizedTime % processFrameRate == 0) {
+							recognizedTime = 0;
 							String outString = resultFrequency
-									.getMaxGreaterThan(30);
+									.getMaxGreaterThan((int) (processFrameRate * evaluationRate));
+							resultFrequency = new StringFrequency();
 							if (outString.equalsIgnoreCase("") != true) {
 								ProcessingCore.showOutputText
 										.setText(outString);
@@ -127,17 +141,6 @@ public class ProcessingCore {
 								}, 2000);
 								;
 								System.out.println(outString);
-								resultFrequency = new StringFrequency();
-							}
-						}
-						if (System.nanoTime() % 3000 <= 5) {
-							String outString = resultFrequency
-									.getMaxGreaterThan(30);
-							if (outString.equalsIgnoreCase("")) {
-								resultFrequency = new StringFrequency();
-								accTime = 1;
-								detectTime = 1;
-
 							}
 						}
 						List<Mat> charMatList;
@@ -174,8 +177,8 @@ public class ProcessingCore {
 									.getBoundingRect()));
 						}
 						Mat boundingRect = car.toMat();
-						Imgproc.drawContours(boundingRect, bandContours, -1,
-								new Scalar(0, 255, 0), 3);
+						// Imgproc.drawContours(boundingRect, bandContours, -1,
+						// new Scalar(0, 255, 0), 3);
 						Imgproc.drawContours(boundingRect, plateContours, -1,
 								new Scalar(255, 0, 0), 2);
 						Imgproc.resize(
@@ -200,12 +203,10 @@ public class ProcessingCore {
 							Imgproc.drawContours(plate,
 									TextSegment.getBoundingRectPoint(), -1,
 									new Scalar(0, 0, 255), 2);
-							Imgproc.resize(
-									plate,
-									plate,
-									new Size(400,
-											(int) (400.0 / plate.cols() * plate
-													.rows())));
+							Imgproc.resize(plate, plate, new Size(
+									ProcessingCore.showPlate.getWidth(),
+									(int) (ProcessingCore.showPlate.getWidth()
+											* plate.height() / plate.width())));
 							BufferedImage band = Panel
 									.matToBufferedImage(plate);
 							ProcessingCore.showPlate
@@ -215,10 +216,9 @@ public class ProcessingCore {
 						// show bug session
 						if (debugMode) {
 							if (captureBand != null) {
-								Mat debugBand = Utils
-										.histoGraph(Utils
-												.verticalLine(captureBand
-														.toMat()), true, true);
+								Mat debugBand = Utils.histoGraph(
+										Utils.verticalLine(car.toMat()), true,
+										true);
 								Imgproc.resize(
 										debugBand,
 										debugBand,
@@ -371,30 +371,26 @@ public class ProcessingCore {
 		timer.cancel();
 	}
 
-	private void showDebug(JTextField outTextField, String outputString) {
-		if (debugMode) {
-			outTextField.setText(outputString);
-		}
-	}
-
 	int accTime = 1;
 	int detectTime = 1;
 
 	private void showAcc(String realOutput) {
 
 		if (debugMode) {
-			if (realOutput.equalsIgnoreCase("")) {
-				return;
+
+			if (!(WindowDebug.txtExpectOutput.getText().equalsIgnoreCase(""))) {
+				detectTime++;
+				if (realOutput.equalsIgnoreCase(WindowDebug.txtExpectOutput
+						.getText())) {
+					accTime++;
+
+				}
+				WindowDebug.acc.setText("ACC : "
+						+ ((double) accTime * 100 / (double) detectTime)
+						+ " % (EQUAL " + accTime + "/DETECT " + detectTime
+						+ ")");
 			}
-			if (realOutput.equalsIgnoreCase(WindowDebug.txtExpectOutput
-					.getText())
-					&& (!WindowDebug.txtExpectOutput.getText()
-							.equalsIgnoreCase(""))) {
-				accTime++;
-			}
-			detectTime++;
-			WindowDebug.acc.setText(""
-					+ ((double) accTime*100 / (double) detectTime));
+
 		}
 	}
 }

@@ -9,6 +9,7 @@ import java.util.Vector;
 import ocr.text.recognition.OCR;
 import ocr.text.segmentation.TextSegment;
 
+import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
 import org.opencv.highgui.Highgui;
@@ -39,7 +40,7 @@ public class Car {
 		Mat image = Utils.verticalLine(carImage);
 		for (int i = 0; i < maxCandidate; i++) {
 			Band band = clipBand(image);
-			if (band.height <= carImage.height()*0.1) {
+			if (band.height <= carImage.height()*0.05) {
 				break;
 			}
 			Mat zeros = Mat.zeros(band.height, band.width, image.type());
@@ -64,17 +65,16 @@ public class Car {
 		Vector<Byte> pyMagnitude = Utils.projectMatY(grayImage);
 		byte ybm = Collections.max(pyMagnitude);
 		int ybmIndex = pyMagnitude.indexOf(ybm);
-		double c1 = (Collections.max(pyMagnitude) + Collections
-				.min(pyMagnitude)) * 0.5;
+		double c1 = Core.mean(grayImage).val[0] * 1.5;
 		double c2 = (Collections.max(pyMagnitude) + Collections
-				.min(pyMagnitude)) * 0.5;
+				.min(pyMagnitude)) * 0.6;
 		// yb0 = max(y0<=y<=ybm){y|py(y)<=c*py(ybm)}
 		Vector<Byte> yb0InspectSet = new Vector<Byte>(pyMagnitude.subList(0,
 				ybmIndex));
 		int yb0Index = 0;
 		for (int i = 0; i < yb0InspectSet.size(); i++) {
 			Byte byte1 = yb0InspectSet.get(i);
-			if (byte1 <= c1) {
+			if (byte1 <= c2) {
 				yb0Index = i;
 			}
 		}
