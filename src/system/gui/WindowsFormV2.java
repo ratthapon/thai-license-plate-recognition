@@ -1,4 +1,4 @@
-package com.GUI;
+package system.gui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -56,7 +56,7 @@ public class WindowsFormV2 extends JFrame {
 					frame.setVisible(true);
 					core = new ProcessingCore(inLabel, outLabel, pltLabel, true);
 					core.setDebugMode(false);
-					//core.start();
+					core.start();
 				} catch (ClassNotFoundException | InstantiationException
 						| IllegalAccessException
 						| UnsupportedLookAndFeelException e) {

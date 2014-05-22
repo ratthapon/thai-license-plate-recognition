@@ -18,8 +18,8 @@ public class WindowDebug {
 	public static JTextField txtRealFPS;
 	public static JTextField txtExpectOutput;
 	public static JTextField acc;
-	private JTextField textField_4;
-	private JTextField textField_5;
+	public static JTextField txtPlateDetectionSpeed;
+	public static JTextField charRecognitionSpeed;
 	private JTextField textField_6;
 	private JTextField textField_7;
 	private JTextField textField_8;
@@ -68,9 +68,17 @@ public class WindowDebug {
 		JLabel lblRecognitionAccuracy = new JLabel("Recognition accuracy ");
 		lblRecognitionAccuracy.setBounds(848, 199, 200, 14);
 		frame.getContentPane().add(lblRecognitionAccuracy);
+		
+		JLabel lblPlateDetectionSpeed = new JLabel("Plate detection speed");
+		lblPlateDetectionSpeed.setBounds(848, 260, 200, 14);
+		frame.getContentPane().add(lblPlateDetectionSpeed);
+		
+		JLabel lblCharRecognitionSpeed = new JLabel("Char recognition speed");
+		lblCharRecognitionSpeed.setBounds(848, 327, 200, 14);
+		frame.getContentPane().add(lblCharRecognitionSpeed);
 		core.setDebugMode(true);
 		core.start();
-		textField_5.grabFocus();
+		charRecognitionSpeed.grabFocus();
 
 	}
 
@@ -126,15 +134,17 @@ public class WindowDebug {
 		frame.getContentPane().add(acc);
 		acc.setColumns(10);
 
-		textField_4 = new JTextField();
-		textField_4.setBounds(848, 285, 201, 20);
-		frame.getContentPane().add(textField_4);
-		textField_4.setColumns(10);
+		txtPlateDetectionSpeed = new JTextField();
+		txtPlateDetectionSpeed.setEditable(false);
+		txtPlateDetectionSpeed.setBounds(848, 285, 201, 20);
+		frame.getContentPane().add(txtPlateDetectionSpeed);
+		txtPlateDetectionSpeed.setColumns(10);
 
-		textField_5 = new JTextField();
-		textField_5.setBounds(848, 352, 200, 20);
-		frame.getContentPane().add(textField_5);
-		textField_5.setColumns(10);
+		charRecognitionSpeed = new JTextField();
+		charRecognitionSpeed.setEditable(false);
+		charRecognitionSpeed.setBounds(848, 352, 200, 20);
+		frame.getContentPane().add(charRecognitionSpeed);
+		charRecognitionSpeed.setColumns(10);
 
 		textField_6 = new JTextField();
 		textField_6.setBounds(848, 413, 200, 20);

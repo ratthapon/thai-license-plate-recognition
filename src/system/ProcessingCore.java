@@ -116,6 +116,8 @@ public class ProcessingCore {
 				if (capture.isOpened()) {
 					capture.read(srcImage);
 					if (!srcImage.empty()) {
+						long plateDetectionStartTime = System
+								.currentTimeMillis();
 						Car car = new Car(srcImage);
 						List<Band> bands = new ArrayList<>();
 						bands = car.clipBands(maxBandLimit);
@@ -153,6 +155,15 @@ public class ProcessingCore {
 								bandContours.add(Utils.rectToMatOfPoint(band
 										.getBoundingRect()));
 							}
+						}
+						long plateDetectionEndTime = System.currentTimeMillis();
+						if (debugMode) {
+							WindowDebug.txtPlateDetectionSpeed
+									.setText(""
+											+ ((plateDetectionEndTime - plateDetectionStartTime) / 1000)
+											+ " sec. "
+											+ (1000 / (plateDetectionEndTime - plateDetectionStartTime))
+											+ " Plate / Second");
 						}
 						String result = "";
 						for (Plate plate : plates) {
