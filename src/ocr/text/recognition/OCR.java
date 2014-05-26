@@ -26,8 +26,18 @@ public class OCR {
 
 	private static Model model;
 	private static String modelPath = "400dpi_NB_TN_1500.bin";
-	
-	private OCR(){
+
+	public static String getModelPath() {
+		return modelPath;
+	}
+
+	public static void setModelPath(String modelPath) {
+		System.loadLibrary("opencv_java248");
+		OCR.modelPath = modelPath;
+		model = new Model(modelPath);
+	}
+
+	private OCR() {
 		System.loadLibrary("opencv_java248");
 	}
 

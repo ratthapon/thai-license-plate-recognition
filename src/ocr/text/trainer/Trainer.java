@@ -9,8 +9,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 
-import ocr.text.recognition.OCR;
-
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -21,8 +19,6 @@ import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
 public class Trainer {
-	private static String fileName = "sourcedata/CHAR/char_name.txt";
-	private static String directory = "sourcedata/CHAR/";
 
 	public static void train(String fileListName, String labelListName,String saveModelToFileName) {
 		System.loadLibrary("opencv_java248");

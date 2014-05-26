@@ -147,12 +147,15 @@ public class Utils {
 
 		Point[] pyPoint = new Point[pyMagnitude.size()];
 		Point[] pxPoint = new Point[pxMagnitude.size()];
-		for (int i = 0; i < pyMagnitude.size(); i++) {
-			pyPoint[i] = new Point(pyMagnitude.get(i), i);
+		pyPoint[0] = new Point(0, 0);
+		pyPoint[pyMagnitude.size()-1] = new Point(0, pyMagnitude.size()-1);
+		for (int i = 1; i < pyMagnitude.size()-1; i++) {
+			pyPoint[i] = new Point(pyMagnitude.get(i)*4, i);
 		}
-
-		for (int i = 0; i < pxMagnitude.size(); i++) {
-			pxPoint[i] = new Point(i, pxMagnitude.get(i));
+		pxPoint[0] = new Point(0, 0);
+		pxPoint[pxMagnitude.size()-1] = new Point(pxMagnitude.size()-1, 0);
+		for (int i = 1; i < pxMagnitude.size()-1; i++) {
+			pxPoint[i] = new Point(i, pxMagnitude.get(i)*4);
 		}
 		Mat graph = new Mat(image.rows(), image.cols(), image.type(),
 				new Scalar(255, 255, 255));

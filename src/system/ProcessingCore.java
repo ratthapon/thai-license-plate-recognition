@@ -1,13 +1,13 @@
 package system;
 
 import input.video.Panel;
-import input.video.WindowDebug;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -32,6 +32,7 @@ import org.opencv.imgproc.Imgproc;
 import plate.detection.Band;
 import plate.detection.Car;
 import plate.detection.Plate;
+import system.gui.WindowDebug;
 import utils.StringFrequency;
 import utils.Utils;
 
@@ -59,6 +60,7 @@ public class ProcessingCore {
 	private static JLabel showPlate = null;
 	private static JTextField showOutputText = null;
 	private final int processFrameRate = 30; // fps
+	private final double evaluationRate = 0.9; // time per sec
 	private long startTime = 1;
 	private long endTime = 1;
 
@@ -107,7 +109,6 @@ public class ProcessingCore {
 		task = new TimerTask() {
 
 			private StringFrequency resultFrequency = new StringFrequency();
-			private double evaluationRate = 0.9; // time per sec
 			private int recognizedTime = 0;
 
 			@Override
@@ -126,7 +127,7 @@ public class ProcessingCore {
 						if (recognizedTime % processFrameRate == 0) {
 							recognizedTime = 0;
 							String outString = resultFrequency
-									.getMaxGreaterThan((int) (processFrameRate * evaluationRate));
+									.getMax((int) (processFrameRate * evaluationRate));
 							resultFrequency = new StringFrequency();
 							if (outString.equalsIgnoreCase("") != true) {
 								ProcessingCore.showOutputText
@@ -158,11 +159,12 @@ public class ProcessingCore {
 						}
 						long plateDetectionEndTime = System.currentTimeMillis();
 						if (debugMode) {
+							
 							WindowDebug.txtPlateDetectionSpeed
 									.setText(""
-											+ ((plateDetectionEndTime - plateDetectionStartTime) / 1000)
+											+ String.format("%3.2f",(float)((plateDetectionEndTime - plateDetectionStartTime) / 1000))
 											+ " sec. "
-											+ (1000 / (plateDetectionEndTime - plateDetectionStartTime))
+											+ String.format("%3.2f",(float)(1000 / (plateDetectionEndTime - plateDetectionStartTime)))
 											+ " Plate / Second");
 						}
 						String result = "";
@@ -204,16 +206,13 @@ public class ProcessingCore {
 												.getHeight())));
 						BufferedImage temp = Panel
 								.matToBufferedImage(boundingRect);
-						// BufferedImage temp =
-						// Panel.matToBufferedImage(Utils.histoGraph(Utils.verticalLine(bands.get(0).toMat()),
-						// true, true));
 						ProcessingCore.showLabel.setIcon(new ImageIcon(temp));
 
 						if (plates.size() >= 1) {
 							Mat plate = plates.get(0).toMat();
-							Imgproc.drawContours(plate,
-									TextSegment.getBoundingRectPoint(), -1,
-									new Scalar(0, 0, 255), 2);
+							// Imgproc.drawContours(plate,
+							// TextSegment.getBoundingRectPoint(), -1,
+							// new Scalar(0, 0, 255), 2);
 							Imgproc.resize(plate, plate, new Size(
 									ProcessingCore.showPlate.getWidth(),
 									(int) (ProcessingCore.showPlate.getWidth()
@@ -250,23 +249,6 @@ public class ProcessingCore {
 									.matToBufferedImage(debugHist);
 							WindowDebug.showImage3.setIcon(new ImageIcon(
 									debugHistBuffer));
-
-							if (plates.size() >= 1) {
-								Mat plate = plates.get(0).toMat();
-								Imgproc.drawContours(plate,
-										TextSegment.getBoundingRectPoint(), -1,
-										new Scalar(0, 0, 255), 2);
-								Imgproc.resize(
-										plate,
-										plate,
-										new Size(400, (int) (400.0 / plate
-												.cols() * plate.rows())));
-								BufferedImage band = Panel
-										.matToBufferedImage(plate);
-								WindowDebug.showImage4.setIcon(new ImageIcon(
-										band));
-
-							}
 
 							endTime = System.currentTimeMillis();
 							WindowDebug.txtRealFPS.setText("REAL FPS : "
@@ -397,7 +379,7 @@ public class ProcessingCore {
 
 				}
 				WindowDebug.acc.setText("ACC : "
-						+ ((double) accTime * 100 / (double) detectTime)
+						+ String.format("%3.2f",(float)((double) accTime * 100 / (double) detectTime))
 						+ " % (EQUAL " + accTime + "/DETECT " + detectTime
 						+ ")");
 			}

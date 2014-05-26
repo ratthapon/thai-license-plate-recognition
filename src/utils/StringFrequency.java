@@ -30,12 +30,12 @@ public class StringFrequency {
 		return stringList.get(maxIdx);
 	}
 
-	public String getMaxGreaterThan(int thresh) {
+	public String getMax(int thresh) {
 		if (stringList.size() <= 0) {
 			return "";
 		}
 		int maxValue = Collections.max(countList);
-		if (maxValue <= thresh) {
+		if (maxValue < thresh) {
 			return "";
 		}
 		int maxIdx = countList.indexOf(maxValue);

@@ -135,7 +135,7 @@ public class Car {
 		// detect all plate
 		long detectPlateStartTime = (new Date()).getTime();
 		List<Plate> plates = new ArrayList<Plate>();
-		plates = this.clipPlatesMaxBandLimit(3);
+		plates = this.clipPlatesMaxBandLimit(1);
 		long detectPlateStopTime = (new Date()).getTime();
 		System.out.println("Detect plates "
 				+ ((detectPlateStopTime - detectPlateStartTime) / 1000.0)
