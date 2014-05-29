@@ -32,7 +32,7 @@ public class ProcessingCore {
 	private int maxBandLimit = 1;
 
 	private int processFrameRate = 30; // fps
-	private double evaluationRate = 0.9; // time per sec
+	private double evaluationRate = 0.8; // time per sec
 	private long startTime = 1;
 	private long endTime = 1;
 
