@@ -45,7 +45,6 @@ public class ProcessingCore {
 
 	public ProcessingCore() {
 		System.loadLibrary("opencv_java248");
-		System.loadLibrary("opencv_ffmpeg_64");
 		// capture = new VideoCapture(0);
 	}
 

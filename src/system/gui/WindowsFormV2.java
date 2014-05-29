@@ -56,7 +56,7 @@ public class WindowsFormV2 extends JFrame {
 					WindowsFormV2 frame = new WindowsFormV2();
 					frame.setVisible(true);
 					core = new ProcessingCore();
-					core.videoProcess(inLabel, outLabel, pltLabel,"test");
+					core.webcamProcess(inLabel, outLabel, pltLabel);
 					core.start();
 				} catch (ClassNotFoundException | InstantiationException
 						| IllegalAccessException
