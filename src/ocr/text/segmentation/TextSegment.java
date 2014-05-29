@@ -1,20 +1,15 @@
 package ocr.text.segmentation;
 
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
-import java.awt.image.WritableRaster;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
@@ -23,8 +18,6 @@ import org.opencv.core.Size;
 import org.opencv.highgui.Highgui;
 import org.opencv.imgproc.Imgproc;
 
-import com.googlecode.javacv.cpp.opencv_core.IplImage;
-
 public class TextSegment {
 	private static TextSegment textSegmentObj = null;
 	private static String logtag = ""; // TODO debug var
@@ -32,37 +25,6 @@ public class TextSegment {
 	private int plateWidth = (int) (20.0 / 4.0 * plateHeight); // px
 	private int structureElementSize = (int) (0.01 * plateHeight);
 	private double calibrate = Math.floor(structureElementSize / 2.0);
-
-	private ArrayList<IplImage> segmentText(IplImage iplImage) {
-		ByteBuffer iplBuffer = iplImage.getByteBuffer();
-		// Create a Matrix the same size of image
-		byte[] data;
-		data = new byte[iplBuffer.remaining()];
-		Mat image = new Mat(iplImage.height(), iplImage.width(), CvType.CV_8UC3);
-		// transfer bytes from this buffer into the given destination array
-		iplBuffer.get(data, 0, data.length);
-		// Retrieve all bytes in the buffer
-		iplBuffer.clear();
-		// Fill Matrix with image values
-		image.put(0, 0, data);
-		Highgui.imwrite("log/" + logtag + "/iplmat.jpg", image); // TODO Log
-
-		ArrayList<IplImage> iplImageList = new ArrayList<>();
-		List<Mat> charList;
-		charList = segmentText(image);
-		for (Mat mat : charList) {
-			data = new byte[(int) mat.size().area()];
-			BufferedImage buff = new BufferedImage(mat.width(), mat.height(),
-					BufferedImage.TYPE_4BYTE_ABGR);
-			WritableRaster raster = buff.getRaster();
-			DataBufferByte dataBuffer = (DataBufferByte) raster.getDataBuffer();
-			data = dataBuffer.getData();
-			mat.get(0, 0, data);
-			IplImage img = IplImage.createFrom(buff);
-			iplImageList.add(img);
-		}
-		return iplImageList;
-	}
 
 	public static List<Mat> getListMatOfCharImage(Mat image) {
 		if (textSegmentObj == null) {
@@ -188,94 +150,4 @@ public class TextSegment {
 	private List<Rect> boundingRect;
 	private List<MatOfPoint> boundingRectPoint;
 
-	private static void testSegment() {
-		System.loadLibrary("opencv_java248");
-
-		// remove old file
-		File folder = new File("segment/");
-		folder.mkdir();
-		File[] listOfFiles = folder.listFiles();
-		for (int n = 0; n < listOfFiles.length; n++) {
-			if (listOfFiles[n].isDirectory()) {
-				// System.out.println("segment/" + i + "/"
-				// + listOfFiles[n].getName());
-				File file = new File("segment/" + listOfFiles[n].getName());
-				file.delete();
-			}
-		}
-		folder = new File("log/");
-		folder.mkdir();
-		listOfFiles = folder.listFiles();
-		for (int n = 0; n < listOfFiles.length; n++) {
-			if (listOfFiles[n].isDirectory()) {
-				// System.out.println("log/" + i + "/"
-				// + listOfFiles[n].getName());
-				(new File("log/" + listOfFiles[n].getName())).delete();
-			}
-		}
-
-		List<Mat> charList;
-		folder = new File("sourcedata/LP/");
-		folder.mkdir();
-		FileReader fileReader;
-		BufferedReader bufferedReader;
-		List<String> lines;
-		String line;
-		try {
-			fileReader = new FileReader("sourcedata/LP/plate_name.txt");
-			bufferedReader = new BufferedReader(fileReader);
-			lines = new ArrayList<String>();
-			line = null;
-			while ((line = bufferedReader.readLine()) != null) {
-				lines.add(line);
-			}
-			bufferedReader.close();
-			String[] fileNames = lines.toArray(new String[lines.size()]);
-
-			fileReader = new FileReader("sourcedata/LP/lebel.txt");
-			bufferedReader = new BufferedReader(fileReader);
-			lines = new ArrayList<String>();
-			line = null;
-			while ((line = bufferedReader.readLine()) != null) {
-				lines.add(line);
-			}
-			bufferedReader.close();
-			String[] ans = lines.toArray(new String[lines.size()]);
-			for (int i = 0; i < fileNames.length; i++) {
-				// create new file
-				String dirName = "sourcedata/LP/";
-				logtag = fileNames[i].split(".j")[0].split(".p")[0].replace(
-						"/", "_");
-				System.out.println("LOGTAG " + logtag + " read "
-						+ (dirName + fileNames[i]));
-				(new File("segment/" + logtag)).mkdir();
-				(new File("log/" + logtag)).mkdir();
-				File sourceFile = new File("sourcedata/LP/" + fileNames[i]);
-				if (sourceFile.exists() && sourceFile.isFile()) {
-					Mat plateImage = Highgui.imread(dirName + fileNames[i]);
-					charList = getListMatOfCharImage(plateImage);
-					int j;
-					j = 1;
-					try {
-						(new File("segment/" + logtag + "/" + ans[i]))
-								.createNewFile();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					System.out.println("LP length " + charList.size());
-					for (Mat mat : charList) {
-						Highgui.imwrite("segment/" + logtag + "/" + logtag
-								+ "_" + (j++) + ".bmp", mat);
-					}
-				} else {
-					System.out.println("File not found");
-				}
-			}
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
 }

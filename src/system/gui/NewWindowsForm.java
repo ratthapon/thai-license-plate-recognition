@@ -54,10 +54,6 @@ public class NewWindowsForm {
 	 */
 	public NewWindowsForm() {
 		initialize();
-		ProcessingCore core = new ProcessingCore(fullImage, plateImage, pltText,
-				true);
-		core.setDebugMode(false);
-		core.start();
 	}
 
 	/**

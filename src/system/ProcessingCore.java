@@ -3,13 +3,7 @@ package system;
 import input.video.Panel;
 
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -25,87 +19,271 @@ import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
-import org.opencv.highgui.Highgui;
 import org.opencv.highgui.VideoCapture;
 import org.opencv.imgproc.Imgproc;
 
 import plate.detection.Band;
 import plate.detection.Car;
 import plate.detection.Plate;
-import system.gui.WindowDebug;
 import utils.StringFrequency;
 import utils.Utils;
 
 public class ProcessingCore {
-	public static String logtag = "";
-	private static int testCount = 0;
-	private static int foundCount = 0;
-	private static int notFoundCOunt = 0;
-	private static int isPlateCount = 0;
+	private int maxBandLimit = 1;
 
-	private static int maxBandLimit = 1;
-	private boolean debugMode = false;
-
-	public void setDebugMode(boolean debugMode) {
-		this.debugMode = debugMode;
-	}
-
-	private static String filePath = null;
-
-	public static void setFilePath(String filePath) {
-		ProcessingCore.filePath = filePath;
-	}
-
-	private static JLabel showLabel = null;
-	private static JLabel showPlate = null;
-	private static JTextField showOutputText = null;
-	private final int processFrameRate = 30; // fps
-	private final double evaluationRate = 0.9; // time per sec
+	private int processFrameRate = 30; // fps
+	private double evaluationRate = 0.9; // time per sec
 	private long startTime = 1;
 	private long endTime = 1;
 
-	TimerTask task = null;
-	Timer timer = new Timer();
+	private TimerTask task = null;
+	private Timer timer = new Timer();
 
-	public static Band captureBand = null; // debug
+	private int accTime = 1;
+	private int detectTime = 1;
+	private static VideoCapture capture;
 
 	public ProcessingCore() {
+		System.loadLibrary("opencv_java248");
+		System.loadLibrary("opencv_ffmpeg_64");
+		// capture = new VideoCapture(0);
+	}
+
+	public void webcamProcess(JLabel showFullInputImageLabel,
+			JLabel showPlateOutputImageLabel, JTextField outputTextField) {
 		final Mat srcImage = new Mat();
-		final VideoCapture capture = new VideoCapture(0);
+		capture = new VideoCapture(0);
+		final JLabel fullImagePanel = showFullInputImageLabel;
+		final JLabel plateImagePanel = showPlateOutputImageLabel;
+		final JTextField showOutputText = outputTextField;
 		task = new TimerTask() {
+
+			private StringFrequency resultFrequency = new StringFrequency();
+			private int recognizedTime = 0;
 
 			@Override
 			public void run() {
-				System.out.println("Running.Mode console.");
+				System.out.println("Running.Mode show image.");
 				if (capture.isOpened()) {
 					capture.read(srcImage);
 					if (!srcImage.empty()) {
 						Car car = new Car(srcImage);
-						System.out.println(car.readPlate());
+						List<Band> bands = new ArrayList<>();
+						bands = car.clipBands(maxBandLimit);
+						List<Plate> plates = new ArrayList<Plate>();
+						recognizedTime++;
+						if (recognizedTime % processFrameRate == 0) {
+							recognizedTime = 0;
+							String outString = resultFrequency
+									.getMax((int) (processFrameRate * evaluationRate));
+							resultFrequency = new StringFrequency();
+							if (outString.equalsIgnoreCase("") != true) {
+								showOutputText.setText(outString);
+								// reset output text
+								(new Timer()).schedule(new TimerTask() {
+
+									@Override
+									public void run() {
+										showOutputText.setText("");
+									}
+								}, 2000);
+								;
+								System.out.println(outString);
+							}
+						}
+						List<Mat> charMatList;
+						List<MatOfPoint> plateContours = new ArrayList<MatOfPoint>();
+						for (Band band : bands) {
+							plates.add(band.clipPlate2(car.toMat()));
+						}
+						String result = "";
+						for (Plate plate : plates) {
+							charMatList = new ArrayList<Mat>();
+							charMatList = TextSegment
+									.getListMatOfCharImage(plate.toMat());
+							if (charMatList.size() <= 0) {
+								continue;
+							}
+							int[] charCode = OCR
+									.recognizeCharImage(charMatList);
+							for (int i = 0; i < charCode.length; i++) {
+								int c = charCode[i];
+								if (charCode[i] >= 161) {
+									c = 0x0e00 + (charCode[i] - 160);
+								}
+								result = result + String.format("%c", c);
+							}
+							resultFrequency.push(result);
+							result = new String("");
+							plateContours.add(Utils.rectToMatOfPoint(plate
+									.getBoundingRect()));
+						}
+						Mat boundingRect = car.toMat();
+						Imgproc.drawContours(boundingRect, plateContours, -1,
+								new Scalar(255, 0, 0), 2);
+						Imgproc.resize(
+								boundingRect,
+								boundingRect,
+								new Size(
+										fullImagePanel.getWidth(),
+										(int) (fullImagePanel.getWidth()
+												/ fullImagePanel.getWidth() * fullImagePanel
+												.getHeight())));
+						BufferedImage temp = Panel
+								.matToBufferedImage(boundingRect);
+						fullImagePanel.setIcon(new ImageIcon(temp));
+
+						if (plates.size() >= 1) {
+							Mat plate = plates.get(0).toMat();
+							// Imgproc.drawContours(plate,
+							// TextSegment.getBoundingRectPoint(), -1,
+							// new Scalar(0, 0, 255), 2);
+							Imgproc.resize(
+									plate,
+									plate,
+									new Size(plateImagePanel.getWidth(),
+											(int) (plateImagePanel.getWidth()
+													* plate.height() / plate
+													.width())));
+							BufferedImage band = Panel
+									.matToBufferedImage(plate);
+							plateImagePanel.setIcon(new ImageIcon(band));
+						}
 					}
 				}
 			}
 		};
 	}
 
-	public ProcessingCore(JLabel showFullInputImageLabel,
+	public void videoProcess(JLabel showFullInputImageLabel,
 			JLabel showPlateOutputImageLabel, JTextField outputTextField,
-			boolean webCamMode) {
+			String videoPath) {
+		final Mat frame = new Mat();
+		System.out.println("Set" + capture);
+		capture = new VideoCapture("IMG_2002.mov");
+		System.out.println("Set" + capture);
+		final JLabel fullImagePanel = showFullInputImageLabel;
+		final JLabel plateImagePanel = showPlateOutputImageLabel;
+		final JTextField showOutputText = outputTextField;
+		final String videoFIlePath = "IMG_2002_xvid.avi";
+		task = new TimerTask() {
+
+			private StringFrequency resultFrequency = new StringFrequency();
+			private int recognizedTime = 0;
+
+			@Override
+			public void run() {
+				System.out.println("Running.Video.");
+				if (capture.isOpened()) {
+
+					System.out.println("Capture video frame." + frame.size());
+					if (!frame.empty()) {
+						Car car = new Car(frame);
+						List<Band> bands = new ArrayList<>();
+						bands = car.clipBands(maxBandLimit);
+						List<Plate> plates = new ArrayList<Plate>();
+						recognizedTime++;
+						if (recognizedTime % processFrameRate == 0) {
+							recognizedTime = 0;
+							String outString = resultFrequency
+									.getMax((int) (processFrameRate * evaluationRate));
+							resultFrequency = new StringFrequency();
+							if (outString.equalsIgnoreCase("") != true) {
+								showOutputText.setText(outString);
+								// reset output text
+								(new Timer()).schedule(new TimerTask() {
+
+									@Override
+									public void run() {
+										showOutputText.setText("");
+									}
+								}, 2000);
+								;
+								System.out.println(outString);
+							}
+						}
+						List<Mat> charMatList;
+						List<MatOfPoint> plateContours = new ArrayList<MatOfPoint>();
+						for (Band band : bands) {
+							plates.add(band.clipPlate2(car.toMat()));
+						}
+						String result = "";
+						for (Plate plate : plates) {
+							charMatList = new ArrayList<Mat>();
+							charMatList = TextSegment
+									.getListMatOfCharImage(plate.toMat());
+							if (charMatList.size() <= 0) {
+								continue;
+							}
+							int[] charCode = OCR
+									.recognizeCharImage(charMatList);
+							for (int i = 0; i < charCode.length; i++) {
+								int c = charCode[i];
+								if (charCode[i] >= 161) {
+									c = 0x0e00 + (charCode[i] - 160);
+								}
+								result = result + String.format("%c", c);
+							}
+							resultFrequency.push(result);
+							result = new String("");
+							plateContours.add(Utils.rectToMatOfPoint(plate
+									.getBoundingRect()));
+						}
+						Mat boundingRect = car.toMat();
+						Imgproc.drawContours(boundingRect, plateContours, -1,
+								new Scalar(255, 0, 0), 2);
+						Imgproc.resize(
+								boundingRect,
+								boundingRect,
+								new Size(
+										fullImagePanel.getWidth(),
+										(int) (fullImagePanel.getWidth()
+												/ fullImagePanel.getWidth() * fullImagePanel
+												.getHeight())));
+						BufferedImage temp = Panel
+								.matToBufferedImage(boundingRect);
+						fullImagePanel.setIcon(new ImageIcon(temp));
+
+						if (plates.size() >= 1) {
+							Mat plate = plates.get(0).toMat();
+							// Imgproc.drawContours(plate,
+							// TextSegment.getBoundingRectPoint(), -1,
+							// new Scalar(0, 0, 255), 2);
+							Imgproc.resize(
+									plate,
+									plate,
+									new Size(plateImagePanel.getWidth(),
+											(int) (plateImagePanel.getWidth()
+													* plate.height() / plate
+													.width())));
+							BufferedImage band = Panel
+									.matToBufferedImage(plate);
+							plateImagePanel.setIcon(new ImageIcon(band));
+						}
+					}
+				}
+			}
+		};
+	}
+
+	public void webcamDebugMode(JLabel panelTopLeft, JLabel panelTopRight,
+			JLabel panelBottomLeft, JLabel panelBottomRight,
+			JTextField[] textFields) {
 		System.loadLibrary("opencv_java248");
 		final Mat srcImage = new Mat();
-		final VideoCapture capture;
-		if (webCamMode) {
-			capture = new VideoCapture(0);
-		} else {
-			if (filePath != null) {
-				capture = new VideoCapture(filePath);
-			} else {
-				return;
-			}
-		}
-		ProcessingCore.showLabel = showFullInputImageLabel;
-		ProcessingCore.showPlate = showPlateOutputImageLabel;
-		ProcessingCore.showOutputText = outputTextField;
+		capture = new VideoCapture(0);
+
+		final JLabel topLeft = panelTopLeft;
+		final JLabel topRight = panelTopRight;
+		final JLabel bottomLeft = panelBottomLeft;
+		final JLabel bottomRight = panelBottomRight;
+		final JTextField txtOutputText = textFields[0];
+		final JTextField txtFrameRate = textFields[1];
+		final JTextField txtExpectOutput = textFields[2];
+		final JTextField txtAcc = textFields[3];
+		final JTextField txtPlateDetectSpeed = textFields[4];
+		final JTextField txtCharRecogSpeed = textFields[5];
+
 		task = new TimerTask() {
 
 			private StringFrequency resultFrequency = new StringFrequency();
@@ -130,16 +308,30 @@ public class ProcessingCore {
 									.getMax((int) (processFrameRate * evaluationRate));
 							resultFrequency = new StringFrequency();
 							if (outString.equalsIgnoreCase("") != true) {
-								ProcessingCore.showOutputText
-										.setText(outString);
-								showAcc(outString);
+								txtOutputText.setText(outString);
+								// show acc
+								if (!(txtExpectOutput.getText()
+										.equalsIgnoreCase(""))) {
+									detectTime++;
+									if (outString
+											.equalsIgnoreCase(txtExpectOutput
+													.getText())) {
+										accTime++;
+
+									}
+									txtAcc.setText("ACC : "
+											+ String.format(
+													"%3.2f",
+													(float) ((double) accTime * 100 / (double) detectTime))
+											+ " % (EQUAL " + accTime
+											+ "/DETECT " + detectTime + ")");
+								}
 								// reset output text
 								(new Timer()).schedule(new TimerTask() {
 
 									@Override
 									public void run() {
-										ProcessingCore.showOutputText
-												.setText("");
+										txtOutputText.setText("");
 									}
 								}, 2000);
 								;
@@ -151,22 +343,22 @@ public class ProcessingCore {
 						List<MatOfPoint> plateContours = new ArrayList<MatOfPoint>();
 						for (Band band : bands) {
 							plates.add(band.clipPlate2(car.toMat()));
-							if (debugMode) {
-								captureBand = band;
-								bandContours.add(Utils.rectToMatOfPoint(band
-										.getBoundingRect()));
-							}
+							bandContours.add(Utils.rectToMatOfPoint(band
+									.getBoundingRect()));
 						}
 						long plateDetectionEndTime = System.currentTimeMillis();
-						if (debugMode) {
-							
-							WindowDebug.txtPlateDetectionSpeed
-									.setText(""
-											+ String.format("%3.2f",(float)((plateDetectionEndTime - plateDetectionStartTime) / 1000))
-											+ " sec. "
-											+ String.format("%3.2f",(float)(1000 / (plateDetectionEndTime - plateDetectionStartTime)))
-											+ " Plate / Second");
-						}
+
+						txtPlateDetectSpeed
+								.setText(""
+										+ String.format(
+												"%3.2f",
+												(float) ((plateDetectionEndTime - plateDetectionStartTime) / 1000))
+										+ " sec. "
+										+ String.format(
+												"%3.2f",
+												(float) (1000 / (plateDetectionEndTime - plateDetectionStartTime)))
+										+ " Plate / Second");
+
 						String result = "";
 						for (Plate plate : plates) {
 							charMatList = new ArrayList<Mat>();
@@ -197,164 +389,74 @@ public class ProcessingCore {
 						Imgproc.resize(
 								boundingRect,
 								boundingRect,
-								new Size(
-										ProcessingCore.showLabel.getWidth(),
-										(int) (ProcessingCore.showLabel
-												.getWidth()
-												/ ProcessingCore.showLabel
-														.getWidth() * ProcessingCore.showLabel
+								new Size(topLeft.getWidth(),
+										(int) (topLeft.getWidth()
+												/ topLeft.getWidth() * topLeft
 												.getHeight())));
 						BufferedImage temp = Panel
 								.matToBufferedImage(boundingRect);
-						ProcessingCore.showLabel.setIcon(new ImageIcon(temp));
+						topLeft.setIcon(new ImageIcon(temp));
 
 						if (plates.size() >= 1) {
 							Mat plate = plates.get(0).toMat();
 							// Imgproc.drawContours(plate,
 							// TextSegment.getBoundingRectPoint(), -1,
 							// new Scalar(0, 0, 255), 2);
-							Imgproc.resize(plate, plate, new Size(
-									ProcessingCore.showPlate.getWidth(),
-									(int) (ProcessingCore.showPlate.getWidth()
-											* plate.height() / plate.width())));
+							Imgproc.resize(
+									plate,
+									plate,
+									new Size(bottomRight.getWidth(),
+											(int) (bottomRight.getWidth()
+													* plate.height() / plate
+													.width())));
 							BufferedImage band = Panel
 									.matToBufferedImage(plate);
-							ProcessingCore.showPlate
-									.setIcon(new ImageIcon(band));
+							bottomRight.setIcon(new ImageIcon(band));
 						}
 
 						// show bug session
-						if (debugMode) {
-							if (captureBand != null) {
-								Mat debugBand = Utils.histoGraph(
-										Utils.verticalLine(car.toMat()), true,
-										true);
-								Imgproc.resize(
-										debugBand,
-										debugBand,
-										new Size(400, (int) (400.0 / debugBand
-												.cols() * debugBand.rows())));
-								BufferedImage band = Panel
-										.matToBufferedImage(debugBand);
-								WindowDebug.showImage2.setIcon(new ImageIcon(
-										band));
-							}
-							Mat debugHist = Utils.verticalLine(car.toMat());
-							Imgproc.resize(
-									debugHist,
-									debugHist,
-									new Size(400, (int) (400.0 / debugHist
-											.cols() * debugHist.rows())));
-							BufferedImage debugHistBuffer = Panel
-									.matToBufferedImage(debugHist);
-							WindowDebug.showImage3.setIcon(new ImageIcon(
-									debugHistBuffer));
 
-							endTime = System.currentTimeMillis();
-							WindowDebug.txtRealFPS.setText("REAL FPS : "
-									+ (1000 / (endTime - startTime)));
-							startTime = endTime;
-						}
+						Mat edgeImage = Utils.histoGraph(
+								Utils.verticalLine(car.toMat()), true, true);
+						Imgproc.resize(
+								edgeImage,
+								edgeImage,
+								new Size(
+										400,
+										(int) (400.0 / edgeImage.cols() * edgeImage
+												.rows())));
+						BufferedImage band = Panel
+								.matToBufferedImage(edgeImage);
+						topRight.setIcon(new ImageIcon(band));
+
+						Mat debugHist = Utils.verticalLine(car.toMat());
+						Imgproc.resize(
+								debugHist,
+								debugHist,
+								new Size(
+										400,
+										(int) (400.0 / debugHist.cols() * debugHist
+												.rows())));
+						BufferedImage debugHistBuffer = Panel
+								.matToBufferedImage(debugHist);
+						bottomLeft.setIcon(new ImageIcon(debugHistBuffer));
+
+						endTime = System.currentTimeMillis();
+						txtFrameRate.setText("REAL FPS : "
+								+ (1000 / (endTime - startTime)));
+						startTime = endTime;
 					}
+
 				}
 			}
 		};
-	}
-
-	private static List<String> readPlate(Mat carMat) {
-		// load car image
-		System.loadLibrary("opencv_java248");
-		Car car = new Car(carMat);
-		// detect all plate
-		long detectPlateStartTime = (new Date()).getTime();
-		List<Plate> plates = new ArrayList<Plate>();
-		plates = car.clipPlatesMaxBandLimit(3);
-		long detectPlateStopTime = (new Date()).getTime();
-		System.out.println("Detect plates "
-				+ ((detectPlateStopTime - detectPlateStartTime) / 1000.0)
-				+ " sec.");
-		String result = "";
-		List<String> resultArray = new ArrayList<>();
-		List<Mat> charMatList;
-		for (Plate plate : plates) {
-			long recogCharStartTime = (new Date()).getTime();
-			charMatList = new ArrayList<Mat>();
-			charMatList = TextSegment.getListMatOfCharImage(plate.toMat());
-			long recogCharStopTime = (new Date()).getTime();
-			System.out.println("Characters detect and recognize "
-					+ ((recogCharStopTime - recogCharStartTime) / 1000.0)
-					+ " sec.");
-			if (charMatList.size() <= 0) {
-				continue;
-			}
-			int[] charCode = OCR.recognizeCharImage(charMatList);
-			for (int i = 0; i < charCode.length; i++) {
-				int c = charCode[i];
-				if (charCode[i] >= 161) {
-					c = 0x0e00 + (charCode[i] - 160);
-				}
-				result = result + String.format("%c", c);
-			}
-			resultArray.add(result);
-			result = new String("");
-		}
-		return resultArray;
-	}
-
-	public static void testDetectPlates(String fileNameList) {
-		System.loadLibrary("opencv_java248");
-		FileReader fileReader;
-		BufferedReader bufferedReader;
-		List<String> lines;
-		String line;
-		try {
-			fileReader = new FileReader(fileNameList);
-			bufferedReader = new BufferedReader(fileReader);
-			lines = new ArrayList<String>();
-			line = null;
-			while ((line = bufferedReader.readLine()) != null) {
-				lines.add(line);
-			}
-			bufferedReader.close();
-			String[] filename = lines.toArray(new String[lines.size()]);
-
-			for (int i = 0; i < filename.length; i++) {
-				logtag = filename[i].split(".j")[0].split(".p")[0];
-				System.out.println(filename[i]);
-
-				long singleFrameStartTime = (new Date()).getTime();
-				System.out.println(readPlate(Highgui.imread(filename[i])));
-				long singleFrameStopTime = (new Date()).getTime();
-				System.out
-						.println("Fram process time "
-								+ ((singleFrameStopTime - singleFrameStartTime) / 1000.0)
-								+ " sec.\n");
-				testCount++;
-			}
-
-			System.out.println("Test " + testCount + " img. Found rect "
-					+ foundCount + ". Not found " + notFoundCOunt
-					+ " is Plate " + isPlateCount);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public static void testSystem(String[] args) {
-		System.loadLibrary("opencv_java248");
-		testDetectPlates(args[0]);
-
-		// Trainer.train(args[0]+".txt", args[1]+".txt",args[2]+".bin");
-		// System.out.println(args[0]+args[1]);
-		// OCR.testClassifier(args[0], args[1]);
 	}
 
 	public void start() {
 		if (task == null) {
 			System.out.println("Can not start.Task is null.");
 		} else {
+			timer = new Timer();
 			timer.scheduleAtFixedRate(task, 0, 1000 / processFrameRate);
 		}
 
@@ -364,26 +466,4 @@ public class ProcessingCore {
 		timer.cancel();
 	}
 
-	int accTime = 1;
-	int detectTime = 1;
-
-	private void showAcc(String realOutput) {
-
-		if (debugMode) {
-
-			if (!(WindowDebug.txtExpectOutput.getText().equalsIgnoreCase(""))) {
-				detectTime++;
-				if (realOutput.equalsIgnoreCase(WindowDebug.txtExpectOutput
-						.getText())) {
-					accTime++;
-
-				}
-				WindowDebug.acc.setText("ACC : "
-						+ String.format("%3.2f",(float)((double) accTime * 100 / (double) detectTime))
-						+ " % (EQUAL " + accTime + "/DETECT " + detectTime
-						+ ")");
-			}
-
-		}
-	}
 }

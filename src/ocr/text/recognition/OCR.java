@@ -41,65 +41,6 @@ public class OCR {
 		System.loadLibrary("opencv_java248");
 	}
 
-	public static void testClassifier(String fileListName, String modelPath) {
-		//
-		// THIS IS CLASSIFY PHASE
-		//
-		// classify
-		System.loadLibrary("opencv_java248");
-		if (fileListName == null || modelPath.equals("default")) {
-			fileListName = "trainFileNameList.txt";
-		}
-		if (modelPath == null || modelPath.equals("default")) {
-			OCR.modelPath = "400dpi_NB_TN_all.bin";
-			modelPath = "400dpi_NB_TN_all.bin";
-		}
-		if (model == null) {
-			model = new Model(modelPath);
-		}
-		FileReader fileReader;
-		BufferedReader bufferedReader;
-		List<String> lines;
-		String line;
-
-		try {
-			fileReader = new FileReader(fileListName);
-			bufferedReader = new BufferedReader(fileReader);
-			lines = new ArrayList<String>();
-			line = null;
-			while ((line = bufferedReader.readLine()) != null) {
-				lines.add(line);
-			}
-			bufferedReader.close();
-			String[] filename = lines.toArray(new String[lines.size()]);
-
-			int testCount = 0;
-			List<Mat> charImageList = new ArrayList<>();
-			for (int i = 0; i < filename.length; i++) {
-				Mat img = Highgui.imread(filename[i]);
-				charImageList.add(img.clone());
-				testCount++;
-			}
-			int[] result;
-			int[] expected = new int[testCount];
-			double[] buffer = new double[testCount];
-			Mat mat64f = new Mat();
-			model.getResponse().convertTo(mat64f, CvType.CV_64F);
-			mat64f.get(0, 0, buffer);
-			for (int i = 0; i < buffer.length; i++) {
-				expected[i] = (int) buffer[i];
-			}
-			result = recognizeCharImage(charImageList);
-			System.out.println("Acc " + accuracyRate(result, expected));
-
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-	}
-
 	public static int[] recognizeCharImage(List<Mat> charImageList) {
 		if (ocrInstance == null) {
 			ocrInstance = new OCR();

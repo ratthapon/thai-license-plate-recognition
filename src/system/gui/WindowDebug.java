@@ -5,7 +5,6 @@ import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.LineBorder;
 
@@ -14,20 +13,20 @@ import system.ProcessingCore;
 public class WindowDebug {
 
 	private JFrame frame;
-	public static JTextField txtOutputText;
-	public static JTextField txtRealFPS;
-	public static JTextField txtExpectOutput;
-	public static JTextField acc;
-	public static JTextField txtPlateDetectionSpeed;
-	public static JTextField charRecognitionSpeed;
+	private JTextField txtOutputText;
+	private JTextField txtRealFPS;
+	private JTextField txtExpectOutput;
+	private JTextField acc;
+	private JTextField txtPlateDetectionSpeed;
+	private JTextField charRecognitionSpeed;
 	private JTextField textField_6;
 	private JTextField textField_7;
 	private JTextField textField_8;
 	private JTextField textField_9;
-	public static JLabel showImage1;
-	public static JLabel showImage2;
-	public static JLabel showImage3;
-	public static JLabel showImage4;
+	private JLabel showImage1;
+	private JLabel showImage2;
+	private JLabel showImage3;
+	private JLabel showImage4;
 
 	/**
 	 * Launch the application.
@@ -50,33 +49,16 @@ public class WindowDebug {
 	 */
 	public WindowDebug() {
 		initialize();
-		ProcessingCore core = new ProcessingCore(showImage1, showImage4, txtOutputText,
-				true);
-		
-		JLabel lblOutputText = new JLabel("Output Text");
-		lblOutputText.setBounds(848, 16, 200, 14);
-		frame.getContentPane().add(lblOutputText);
-		
-		JLabel lblRecognitionFramePer = new JLabel("Recognition frame per second (speed)");
-		lblRecognitionFramePer.setBounds(848, 77, 200, 14);
-		frame.getContentPane().add(lblRecognitionFramePer);
-		
-		JLabel lblExpectOutput = new JLabel("Expect output");
-		lblExpectOutput.setBounds(848, 138, 200, 14);
-		frame.getContentPane().add(lblExpectOutput);
-		
-		JLabel lblRecognitionAccuracy = new JLabel("Recognition accuracy ");
-		lblRecognitionAccuracy.setBounds(848, 199, 200, 14);
-		frame.getContentPane().add(lblRecognitionAccuracy);
-		
-		JLabel lblPlateDetectionSpeed = new JLabel("Plate detection speed");
-		lblPlateDetectionSpeed.setBounds(848, 260, 200, 14);
-		frame.getContentPane().add(lblPlateDetectionSpeed);
-		
-		JLabel lblCharRecognitionSpeed = new JLabel("Char recognition speed");
-		lblCharRecognitionSpeed.setBounds(848, 327, 200, 14);
-		frame.getContentPane().add(lblCharRecognitionSpeed);
-		core.setDebugMode(true);
+		ProcessingCore core = new ProcessingCore();
+		JTextField[] statusTextFields = new JTextField[6];
+		statusTextFields[0] = txtOutputText;
+		statusTextFields[1] = txtRealFPS;
+		statusTextFields[2] = txtExpectOutput;
+		statusTextFields[3] = acc;
+		statusTextFields[4] = txtPlateDetectionSpeed;
+		statusTextFields[5] = charRecognitionSpeed;
+		core.webcamDebugMode(showImage1, showImage2, showImage3, showImage4,
+				statusTextFields);
 		core.start();
 		charRecognitionSpeed.grabFocus();
 
@@ -165,5 +147,31 @@ public class WindowDebug {
 		textField_9.setBounds(848, 596, 200, 20);
 		frame.getContentPane().add(textField_9);
 		textField_9.setColumns(10);
+
+		JLabel lblOutputText = new JLabel("Output Text");
+		lblOutputText.setBounds(848, 16, 200, 14);
+		frame.getContentPane().add(lblOutputText);
+
+		JLabel lblRecognitionFramePer = new JLabel(
+				"Recognition frame per second (speed)");
+		lblRecognitionFramePer.setBounds(848, 77, 200, 14);
+		frame.getContentPane().add(lblRecognitionFramePer);
+
+		JLabel lblExpectOutput = new JLabel("Expect output");
+		lblExpectOutput.setBounds(848, 138, 200, 14);
+		frame.getContentPane().add(lblExpectOutput);
+
+		JLabel lblRecognitionAccuracy = new JLabel("Recognition accuracy ");
+		lblRecognitionAccuracy.setBounds(848, 199, 200, 14);
+		frame.getContentPane().add(lblRecognitionAccuracy);
+
+		JLabel lblPlateDetectionSpeed = new JLabel("Plate detection speed");
+		lblPlateDetectionSpeed.setBounds(848, 260, 200, 14);
+		frame.getContentPane().add(lblPlateDetectionSpeed);
+
+		JLabel lblCharRecognitionSpeed = new JLabel("Char recognition speed");
+		lblCharRecognitionSpeed.setBounds(848, 327, 200, 14);
+		frame.getContentPane().add(lblCharRecognitionSpeed);
+
 	}
 }

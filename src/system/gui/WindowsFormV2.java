@@ -40,8 +40,9 @@ public class WindowsFormV2 extends JFrame {
 	private static JLabel outLabel2;
 	private static JTextField pltLabel2;
 	private static ProcessingCore core;
-	private static JTabbedPane tabPane;
+	private JTabbedPane tabPane;
 	private JLabel lblFilePath;
+	private String filePath;
 
 	/**
 	 * Launch the application.
@@ -54,8 +55,8 @@ public class WindowsFormV2 extends JFrame {
 							.getSystemLookAndFeelClassName());
 					WindowsFormV2 frame = new WindowsFormV2();
 					frame.setVisible(true);
-					core = new ProcessingCore(inLabel, outLabel, pltLabel, true);
-					core.setDebugMode(false);
+					core = new ProcessingCore();
+					core.videoProcess(inLabel, outLabel, pltLabel,"test");
 					core.start();
 				} catch (ClassNotFoundException | InstantiationException
 						| IllegalAccessException
@@ -91,7 +92,7 @@ public class WindowsFormV2 extends JFrame {
 		itemTabPanel2();
 
 		tabPane = new JTabbedPane();
-		tabPane.addTab("�Ҿ�ҡ���ͧ", panel1);
+		tabPane.addTab("Cam Mode", panel1);
 		{
 			lblLicensePlateRecognition = new JLabel("License Plate Recognition");
 			lblLicensePlateRecognition.setFont(new Font("Tahoma", Font.PLAIN,
@@ -107,10 +108,8 @@ public class WindowsFormV2 extends JFrame {
 				final int VIDEO_TAB = 1;
 				switch (tabPane.getSelectedIndex()) {
 				case WEBCAM_TAB:
-					core.pause();
-					core = new ProcessingCore(inLabel, outLabel, pltLabel, true);
-					core.setDebugMode(false);
-					// core.start();
+					core.webcamProcess(inLabel, outLabel, pltLabel);
+					core.start();
 					break;
 				case VIDEO_TAB:
 					core.pause();
@@ -165,7 +164,7 @@ public class WindowsFormV2 extends JFrame {
 		inforLabel.setBorder(border);
 		panel1.add(inforLabel);
 
-		tabPane.addTab("�Ҿ�ҡ����մ���", panel2);
+		tabPane.addTab("Video Mode", panel2);
 		{
 			label = new JLabel("License Plate Recognition");
 			label.setFont(new Font("Tahoma", Font.PLAIN, 30));
@@ -177,20 +176,21 @@ public class WindowsFormV2 extends JFrame {
 		btnOpenFile.setFont(new Font("Tahoma", Font.PLAIN, 20));
 		btnOpenFile.setBounds(20, 376, 141, 33);
 		btnOpenFile.addActionListener(new ActionListener() {
+
 			@Override
 			public void actionPerformed(ActionEvent event) {
-				File currentDir = new File("F:\\SkyDrive\\Workspace\\OpenCV");
+				File currentDir = new File("F:/SkyDrive/Workspace/ThaiLPR");
 				JFileChooser fileChooser = new JFileChooser();
 				fileChooser.setCurrentDirectory(currentDir);
 				int returnVal = fileChooser.showDialog(null, "Open");
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					
-					String filePath = fileChooser.getSelectedFile().getAbsolutePath();
-					ProcessingCore.setFilePath(filePath);
+
+					filePath = fileChooser.getSelectedFile().getAbsolutePath();
 					lblFilePath.setText(filePath);
-					core = new ProcessingCore(videoLabel, outLabel2, pltLabel2,
-							false);
-					core.setDebugMode(false);
+					core.videoProcess(videoLabel, outLabel2, pltLabel2,
+							filePath);
+					core.start();
+
 				}
 			}
 		});
@@ -217,10 +217,8 @@ public class WindowsFormV2 extends JFrame {
 		JButton btnRunVideo = new JButton("Run");
 		btnRunVideo.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (core != null) {
-					core.start();
-				}
-				
+				core.videoProcess(videoLabel, outLabel2, pltLabel2, filePath);
+				core.start();
 			}
 		});
 		btnRunVideo.setFont(new Font("Tahoma", Font.PLAIN, 20));
@@ -240,8 +238,6 @@ public class WindowsFormV2 extends JFrame {
 	private void itemTabPanel1() {
 		panel1 = new JPanel();
 		panel1.setLayout(null);
-
-		// frame.setExtendedState(5);
 
 	}
 
