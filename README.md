@@ -6,6 +6,10 @@ Thai License Plate Recognition คือโปรแกรมสำหรับ�
 
 โปรแกรมนี้ใช้ library ในการทำ Image processing ด้วย [OpenCV](http://opencv.org/downloads.html) version 2.4.8
 
+Runnable JAR
+------------
+ - [ThaiLPR.rar](http://www.mediafire.com/download/fxs31bh8ps7976s/ThaiLPR.rar) x64 (สำหรับ x86 ให้ copy file opencv/x86/opencv_java248.dll วางไว้ที่ root folder แทน)
+
 Download
 --------
  - [OpenCV](http://opencv.org/downloads.html) version 2.4.8[วิธีติดตั้ง](http://docs.opencv.org/doc/tutorials/introduction/java_eclipse/java_eclipse.html#java-eclipse) [OpenCV documentation](http://docs.opencv.org/java/)
